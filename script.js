@@ -169,7 +169,7 @@ function submitQuery(query) {
   const queryLine = document.createElement('div');
   queryLine.className = 'user-query-line';
   queryLine.innerHTML = `
-    <span class="prompt-user">visitor@grad-project-terminal:~$</span>
+    <span class="prompt-user">user@AOI-Lab:~$</span>
     <span class="query-text">${escapeHTML(query)}</span>
   `;
   logBlock.appendChild(queryLine);
@@ -202,7 +202,7 @@ function processCommandOrQuery(query, logBlock) {
 - help      : 顯示此說明文件。
 - ls 或 list: 列出所有可查詢的專案問答項目與 ID。
 - cat <id>  : 檢視指定問題 ID 的詳細解答。
-- theme     : 切換色彩主題（綠色矩陣、琥珀黃、霓虹賽博）。
+- theme     : 顯示可用色彩主題列表，或輸入 \`theme [名稱/數字]\` 切換主題。
 - crt       : 切換復古 CRT 螢幕濾鏡效果（開/關）。
 - clear     : 清除螢幕內容。
 - about     : 關於本專案與作者資訊。
@@ -242,9 +242,32 @@ function processCommandOrQuery(query, logBlock) {
     return;
   }
 
-  if (lowerQuery === 'theme') {
-    toggleTheme();
-    typeWriter(`主題已切換為：${currentTheme.toUpperCase()}`, logBlock);
+  if (lowerQuery.startsWith('theme')) {
+    const arg = lowerQuery.substring(5).trim();
+    if (!arg) {
+      const themeListText = `【系統配色主題設定】
+當前主題：${currentTheme.toUpperCase()}
+
+請輸入 \`theme [數字 或 名稱]\` 來選擇配色：
+[1] matrix      : 經典綠客駭客風格 (預設)
+[2] amber       : 復古輻射橘黃風格
+[3] cyberpunk   : 霓虹賽博朋克風格
+
+例如：\`theme 2\` 或 \`theme cyberpunk\``;
+      typeWriter(themeListText, logBlock);
+    } else {
+      let targetTheme = '';
+      if (arg === '1' || arg === 'matrix') targetTheme = 'matrix';
+      else if (arg === '2' || arg === 'amber') targetTheme = 'amber';
+      else if (arg === '3' || arg === 'cyberpunk') targetTheme = 'cyberpunk';
+
+      if (targetTheme) {
+        setTheme(targetTheme);
+        typeWriter(`主題已成功變更為：${targetTheme.toUpperCase()}`, logBlock);
+      } else {
+        typeWriter(`無效的主題選擇：「${escapeHTML(arg)}」。請輸入 \`theme\` 查看可用主題列表。`, logBlock);
+      }
+    }
     return;
   }
 
@@ -457,18 +480,33 @@ function clearScreen() {
   terminalInput.focus();
 }
 
-// Toggle Palette CSS Themes
-function toggleTheme() {
+// Set Palette CSS Theme
+function setTheme(themeName) {
   const body = document.body;
-  if (currentTheme === 'matrix') {
-    body.setAttribute('data-theme', 'amber');
-    currentTheme = 'amber';
-  } else if (currentTheme === 'amber') {
-    body.setAttribute('data-theme', 'cyberpunk');
-    currentTheme = 'cyberpunk';
-  } else {
+  if (themeName === 'matrix') {
     body.removeAttribute('data-theme');
     currentTheme = 'matrix';
+    return true;
+  } else if (themeName === 'amber') {
+    body.setAttribute('data-theme', 'amber');
+    currentTheme = 'amber';
+    return true;
+  } else if (themeName === 'cyberpunk') {
+    body.setAttribute('data-theme', 'cyberpunk');
+    currentTheme = 'cyberpunk';
+    return true;
+  }
+  return false;
+}
+
+// Toggle Palette CSS Themes sequentially (for click button)
+function toggleTheme() {
+  if (currentTheme === 'matrix') {
+    setTheme('amber');
+  } else if (currentTheme === 'amber') {
+    setTheme('cyberpunk');
+  } else {
+    setTheme('matrix');
   }
 }
 

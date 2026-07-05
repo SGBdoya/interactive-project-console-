@@ -1,4 +1,4 @@
-# Grad Project Q&A Terminal | 畢業專案互動式諮詢終端
+# Digital Twin Sim2Real Project Q&A Terminal | 畢業專案互動式諮詢終端
 
 這是一個採用 **復古終端機 (Terminal)** 風格設計的互動式問答 (Q&A) 網頁。專門為了讓學弟妹、口試委員或訪客能快速了解您的碩士論文/研究專案而設計。
 
@@ -31,7 +31,7 @@ github_page/
 
 ## 🛠️ 如何編輯問答資料集 (`faq.json`)
 
-系統的所有問答內容皆儲存於 [faq.json](file:///C:/Users/User/Documents/tsong/github_page/faq.json) 中。您只需要修改或擴充該檔案即可，不需要調整 JavaScript 程式碼。
+系統的所有問答內容皆儲存於 [faq.json](./faq.json) 中。您只需要修改或擴充該檔案即可，不需要調整 JavaScript 程式碼。
 
 ### 資料格式說明：
 
@@ -62,7 +62,7 @@ github_page/
 
 ## 💻 本地執行方式
 
-1. **直接開啟**：直接雙擊 [index.html](file:///C:/Users/User/Documents/tsong/github_page/index.html) 在瀏覽器中載入。
+1. **直接開啟**：直接雙擊 [index.html](./index.html) 在瀏覽器中載入。
    * *注意：部分瀏覽器可能因安全限制 (CORS policy) 阻擋本地直接載入 `faq.json`。若有此狀況，請使用第二種方法。*
 2. **使用 Local Server (推薦)**：
    - 如果您使用 VS Code，可以安裝 **Live Server** 套件，並點擊右下角 "Go Live"。
@@ -97,7 +97,7 @@ github_page/
 | `help` | 顯示系統支援的指令列表 |
 | `ls` 或 `list` | 列出目前庫存中所有的問答題目與 ID |
 | `cat <id>` | 直接閱讀特定 ID 的問答內容 (例如: `cat environment_setup`) |
-| `theme` | 切換主機配色主題 (Matrix 綠 -> 琥珀黃 -> 賽博朋克霓虹) |
+| `theme` | 顯示可用色彩主題列表，或輸入 `theme [名稱/數字]` 切換主題 |
 | `crt` | 開啟或關閉 CRT 螢幕復古濾鏡 |
 | `clear` 或 `cls` | 清除終端機螢幕上的歷史對話 |
 | `about` | 顯示本研究專案的作者資訊與系統背景 |

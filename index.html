@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>學長專案諮詢終端 | Grad Project Q&A Terminal</title>
+  <title>AOI Lab TSong | Digital Twin Sim2Real Project Q&A Terminal</title>
   <meta name="description" content="互動式終端風格的專案諮詢機器人，提供碩士畢業專案的問答、安裝與執行指南。">
   
   <!-- Google Fonts for Terminal look -->
@@ -26,7 +26,7 @@
     <header class="main-header">
       <div class="logo">
         <i class="fa-solid fa-graduation-cap"></i>
-        <span>Graduation Project Portal</span>
+        <span>AOI Lab TSong</span>
       </div>
       <div class="quick-links">
         <a href="https://github.com" target="_blank" id="github-link"><i class="fa-brands fa-github"></i> GitHub</a>
@@ -42,7 +42,7 @@
           <span class="btn minimize"></span>
           <span class="btn maximize"></span>
         </div>
-        <div class="window-title">visitor@grad-project-terminal:~</div>
+        <div class="window-title">user@AOI-Lab:~</div>
         <div class="terminal-actions">
           <button id="theme-toggle" title="切換配色主題" class="action-btn">
             <i class="fa-solid fa-palette"></i>
@@ -61,15 +61,17 @@
         <!-- Welcome Message -->
         <div class="terminal-output welcome-message">
           <pre class="ascii-art">
-  ____                 _   ____            _           _   
- / ___|_ __ __ _  __| | |  _ \ _ __ ___ (_) ___  ___| |_ 
-| |  _| '__/ _` |/ _` | | |_) | '__/ _ \| |/ _ \/ __| __|
-| |_| | | | (_| | (_| | |  __/| | | (_) | |  __/ (__| |_ 
- \____|_|  \__,_|\__,_| |_|   |_|  \___// |\___|\___|\__|
-                                      |__/               
+██████╗ ██╗ ██████╗ ██╗████████╗ █████╗ ██╗     ████████╗██╗    ██╗██╗███╗   ██╗
+██╔══██╗██║██╔════╝ ██║╚══██╔══╝██╔══██╗██║     ╚══██╔══╝██║    ██║██║████╗  ██║
+██║  ██║██║██║  ███╗██║   ██║   ███████║██║        ██║   ██║ █╗ ██║██║██╔██╗ ██║
+██║  ██║██║██║   ██║██║   ██║   ██╔══██║██║        ██║   ██║███╗██║██║██║╚██╗██║
+██████╔╝██║╚██████╔╝██║   ██║   ██║  ██║███████╗   ██║   ╚███╔███╔╝██║██║ ╚████║
+╚═════╝ ╚═╝ ╚═════╝ ╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝   ╚═╝    ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝
+
+                Digital Twin Sim2Real Project
           </pre>
           <p class="system-time">系統載入成功... 當前時間: <span id="current-time">YYYY-MM-DD HH:MM:SS</span></p>
-          <p class="system-status"><span class="status-badge">ONLINE</span> 碩士畢業專案互動式問答系統 v1.0.0 已啟動。</p>
+          <p class="system-status"><span class="status-badge">ONLINE</span> Digital Twin Sim2Real Project 互動式問答系統 v1.0.0 已啟動。</p>
           <p class="help-hint">※ 輸入 <span class="highlight">help</span> 或 <span class="highlight">ls</span> 查看可用指令，或者直接在下方輸入您的問題或關鍵字。</p>
           <div class="divider"></div>
         </div>
@@ -79,7 +81,7 @@
 
         <!-- Terminal Input Line -->
         <div class="input-line">
-          <span class="prompt">visitor@grad-project-terminal:~$</span>
+          <span class="prompt">user@AOI-Lab:~$</span>
           <div class="input-container">
             <input type="text" id="terminal-input" autocomplete="off" autofocus placeholder="輸入指令或問題... (例如: 怎麼執行、環境安裝)">
             <span class="cursor"></span>
