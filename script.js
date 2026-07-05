@@ -3,6 +3,7 @@
  */
 
 // State variables
+let isUnlocked = false;
 let faqData = [];
 let funFaqData = [];
 let restaurantPool = [];
@@ -66,37 +67,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Load FAQ Databases
-  try {
-    const [resFaq, resFun] = await Promise.all([
-      fetch('faq.json'),
-      fetch('fun_faq.json')
-    ]);
-    if (resFaq.ok) faqData = await resFaq.json();
-    else faqData = getFallbackFaqData();
-
-    if (resFun.ok) {
-      const funJson = await resFun.json();
-      funFaqData = funJson.questions || [];
-      restaurantPool = funJson.restaurants || [];
-      moodPool = funJson.moods || [];
-    } else {
-      funFaqData = [];
-      restaurantPool = [];
-      moodPool = [];
-    }
-    
-    console.log('FAQ data loaded:', faqData);
-    console.log('Fun FAQ data loaded:', funFaqData);
-    generateSuggestionChips();
-  } catch (error) {
-    console.error('Failed to load databases, using fallback:', error);
-    faqData = getFallbackFaqData();
-    funFaqData = [];
-    restaurantPool = [];
-    moodPool = [];
-    generateSuggestionChips();
-  }
+  // Prompt password unlock
+  promptForPassword();
 
   // Focus Input on Terminal click
   terminalWindow.addEventListener('click', () => {
@@ -183,6 +155,19 @@ function handleKeyDown(e) {
   // Reset tab cycle if any key other than Tab is pressed
   if (e.key !== 'Tab') {
     isTabCycling = false;
+  }
+
+  if (!isUnlocked) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const pw = terminalInput.value;
+      if (pw) {
+        unlockSystem(pw);
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+    }
+    return;
   }
 
   if (isTutorDecisionMode) {
@@ -1595,6 +1580,151 @@ function startChmodSimulation() {
   
   outputHistory.appendChild(logBlock);
   typeWriter(welcomeText, logBlock);
+}
+
+// Password verification and decryption procedures
+function promptForPassword() {
+  isUnlocked = false;
+  terminalInput.type = 'password';
+  terminalInput.placeholder = '請輸入解密金鑰密碼解鎖系統...';
+  
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  outputHistory.appendChild(logBlock);
+  
+  const welcomeText = `==================================================
+*          系統存取受限 SYSTEM ACCESS RESTRICTED          *
+==================================================
+請輸入安全解密金鑰密碼解鎖問答系統主伺服器：`;
+  typeWriter(welcomeText, logBlock);
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  if (promptEl) promptEl.textContent = 'Password: ';
+}
+
+// Web Crypto Decryptor for GCM payload
+async function decryptData(encryptedBuffer, password) {
+  try {
+    const salt = encryptedBuffer.slice(0, 16);
+    const iv = encryptedBuffer.slice(16, 28);
+    const authTag = encryptedBuffer.slice(28, 44);
+    const ciphertext = encryptedBuffer.slice(44);
+
+    const ciphertextWithTag = new Uint8Array(ciphertext.byteLength + authTag.byteLength);
+    ciphertextWithTag.set(new Uint8Array(ciphertext), 0);
+    ciphertextWithTag.set(new Uint8Array(authTag), ciphertext.byteLength);
+
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits", "deriveKey"]
+    );
+
+    const key = await window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: iv,
+        tagLength: 128
+      },
+      key,
+      ciphertextWithTag
+    );
+
+    const dec = new TextDecoder();
+    return dec.decode(decryptedBuffer);
+  } catch (err) {
+    console.error('Decryption failed:', err);
+    throw new Error('解密失敗，金鑰密碼錯誤。');
+  }
+}
+
+async function unlockSystem(password) {
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const queryLine = document.createElement('div');
+  queryLine.className = 'user-query-line';
+  queryLine.innerHTML = `
+    <span class="prompt-user">Password: </span>
+    <span class="query-text">••••••••••••</span>
+  `;
+  logBlock.appendChild(queryLine);
+  outputHistory.appendChild(logBlock);
+
+  terminalInput.value = '';
+  updateCursorPosition();
+  scrollToBottom();
+
+  const statusEl = document.createElement('div');
+  statusEl.textContent = '正在驗證金鑰並解密加載安全資料庫...';
+  logBlock.appendChild(statusEl);
+
+  try {
+    const [resFaq, resFun] = await Promise.all([
+      fetch('faq.enc'),
+      fetch('fun_faq.enc')
+    ]);
+
+    if (!resFaq.ok || !resFun.ok) {
+      throw new Error('無法從伺服器取得加密資料庫 (.enc)。請確認檔案是否已上傳！');
+    }
+
+    const [bufFaq, bufFun] = await Promise.all([
+      resFaq.arrayBuffer(),
+      resFun.arrayBuffer()
+    ]);
+
+    const decryptedFaqStr = await decryptData(bufFaq, password);
+    faqData = JSON.parse(decryptedFaqStr);
+
+    const decryptedFunStr = await decryptData(bufFun, password);
+    const funJson = JSON.parse(decryptedFunStr);
+    funFaqData = funJson.questions || [];
+    restaurantPool = funJson.restaurants || [];
+    moodPool = funJson.moods || [];
+
+    isUnlocked = true;
+    terminalInput.type = 'text';
+    terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+    const promptEl = document.querySelector('.input-line .prompt');
+    if (promptEl) promptEl.textContent = 'user@AOI-Lab:~$';
+
+    statusEl.innerHTML = `<span style="color: var(--text-primary);">[SUCCESS] 密碼驗證通過，資料庫解鎖成功！</span>`;
+    
+    setTimeout(() => {
+      clearScreen();
+      const readyBlock = document.createElement('div');
+      readyBlock.className = 'terminal-block';
+      outputHistory.appendChild(readyBlock);
+      
+      const readyText = `系統載入成功... 當前時間: ${new Date().toISOString().replace('T', ' ').substring(0, 19)}
+ONLINE Digital Twin Sim2Real Project 互動式問答系統 v1.3.0 已啟動。
+※ 輸入 help 或 ls 查看可用指令，或者直接在下方輸入您的問題或關鍵字。`;
+      typeWriter(readyText, readyBlock, () => {
+        generateSuggestionChips();
+      });
+    }, 1000);
+
+  } catch (err) {
+    statusEl.innerHTML = `<span style="color: var(--text-secondary);">[ERROR] ${escapeHTML(err.message)}</span>`;
+    scrollToBottom();
+  }
 }
 
 

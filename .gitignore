@@ -30,3 +30,7 @@ pnpm-debug.log*
 
 # Logs
 *.log
+
+# Plaintext databases (should only exist locally, never pushed to Git)
+faq.json
+fun_faq.json
