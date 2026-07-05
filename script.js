@@ -166,9 +166,13 @@ function handleKeyDown(e) {
   }
 
   if (isTutorDecisionMode) {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
-      selectedDecisionIndex = selectedDecisionIndex === 0 ? 1 : 0;
+      selectedDecisionIndex = 0;
+      renderDecisionMenu();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedDecisionIndex = 1;
       renderDecisionMenu();
     } else if (e.key === 'Enter') {
       e.preventDefault();
