@@ -27,6 +27,14 @@ let activeThemeSelectorEl = null;
 // Tutorial Mode State
 let isTutorialMode = false;
 
+// Interactive Tutorial Simulation Mode States
+let isTutorDecisionMode = false;
+let selectedDecisionIndex = 0;
+let activeDecisionEl = null;
+
+let isTutorSimMode = false;
+let tutorSimStep = 0;
+
 // Tab completion state
 let isTabCycling = false;
 let tabOriginalInput = '';
@@ -148,6 +156,32 @@ function updateCursorPosition() {
 
 // Handle Key Events in Input
 function handleKeyDown(e) {
+  if (isTutorDecisionMode) {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedDecisionIndex = selectedDecisionIndex === 0 ? 1 : 0;
+      renderDecisionMenu();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmDecision();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelDecision();
+    } else {
+      e.preventDefault();
+    }
+    return;
+  }
+
+  if (isTutorSimMode) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const simQuery = terminalInput.value.trim();
+      processTutorSimInput(simQuery);
+    }
+    return;
+  }
+
   if (isThemeSelectionMode) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -368,19 +402,7 @@ function processCommandOrQuery(query, logBlock) {
   if (lowerQuery.startsWith('tutorial')) {
     const arg = lowerQuery.substring(8).trim();
     if (!arg) {
-      isTutorialMode = true;
-      terminalInput.placeholder = '輸入單元編號 (如 1、2) 或輸入 exit 退出教學模式...';
-      
-      const tutorMenu = `【Linux 與實驗室環境快速上手教學手冊】
-請直接輸入 **[單元編號 或 關鍵字]** 閱讀對應單元教學，或輸入 **exit** 退出：
-
-  [1] linux   : 基礎 Linux 常用指令 (cd, ls, pwd)
-  [2] tmux    : tmux 終端多工器 (如何在背景執行與掛載程序)
-  [3] conda   : Conda 虛擬環境建立、啟動、列表與刪除
-  [4] chmod   : 檔案執行權限設定 (chmod +x 腳本.sh)
-
-💡 提示：現在您可以直接輸入數字（例如 \`1\`）來閱讀教學，輸入 \`exit\` 可隨時退出。`;
-      typeWriter(tutorMenu, logBlock);
+      showTutorMenu();
     } else {
       const unitMatch = matchTutorialUnit(arg);
       if (unitMatch) {
@@ -910,5 +932,191 @@ user@server:~$
    \`ls -lh [檔案名稱.sh]\`
    *輸出中若包含 \`-rwxr-xr-x\`，其中的 \`x\` (eXecutable) 就代表該檔案已具備執行權限。*`;
     typeWriter(ch4, logBlock);
+  }
+}
+
+// Tutorial UI Menu Rendering and Simulator logic
+function showTutorMenu() {
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  outputHistory.appendChild(logBlock);
+  
+  isTutorialMode = true;
+  terminalInput.placeholder = '輸入單元編號 (如 1、2) 或輸入 exit 退出教學模式...';
+  
+  const tutorMenu = `【Linux 與實驗室環境快速上手教學手冊】
+請直接輸入 **[單元編號 或 關鍵字]** 閱讀對應單元教學，或輸入 **exit** 退出：
+
+  [1] linux   : 基礎 Linux 常用指令 (cd, ls, pwd)
+  [2] tmux    : tmux 終端多工器 (如何在背景執行與掛載程序)
+  [3] conda   : Conda 虛擬環境建立、啟動、列表與刪除
+  [4] chmod   : 檔案執行權限設定 (chmod +x 腳本.sh)
+
+💡 提示：現在您可以直接輸入數字（例如 \`1\`）來閱讀教學，輸入 \`exit\` 可隨時退出。`;
+  typeWriter(tutorMenu, logBlock);
+}
+
+function renderDecisionMenu() {
+  if (!activeDecisionEl) return;
+  
+  const optYes = selectedDecisionIndex === 0 ? '➔ **[是] 進入互動式 Linux 指令模擬器**' : '   [是] 進入互動式 Linux 指令模擬器';
+  const optNo  = selectedDecisionIndex === 1 ? '➔ **[否] 返回教學目錄**' : '   [否] 返回教學目錄';
+  
+  // Format with Markdown since typeWriter handles ** bold
+  const rawText = `
+是否要進入實戰演練？
+${optYes}
+${optNo}
+
+（使用方向鍵 [↑ / ↓] 選擇，按 [Enter] 確認）`;
+  
+  activeDecisionEl.innerHTML = formatMarkdown(rawText);
+  scrollToBottom();
+}
+
+function confirmDecision() {
+  isTutorDecisionMode = false;
+  
+  if (selectedDecisionIndex === 0) {
+    if (activeDecisionEl) {
+      activeDecisionEl.innerHTML = `<div style="color: var(--text-muted); margin-top: 10px;">已確認進入實戰演練模式。</div>`;
+      activeDecisionEl = null;
+    }
+    startLinuxSimulation();
+  } else {
+    if (activeDecisionEl) {
+      activeDecisionEl.innerHTML = `<div style="color: var(--text-muted); margin-top: 10px;">已取消實戰演練，返回目錄。</div>`;
+      activeDecisionEl = null;
+    }
+    isTutorialMode = true;
+    showTutorMenu();
+  }
+}
+
+function cancelDecision() {
+  isTutorDecisionMode = false;
+  if (activeDecisionEl) {
+    activeDecisionEl.innerHTML = `<div style="color: var(--text-muted); margin-top: 10px;">已取消，返回目錄。</div>`;
+    activeDecisionEl = null;
+  }
+  isTutorialMode = true;
+  showTutorMenu();
+}
+
+function startLinuxSimulation() {
+  isTutorSimMode = true;
+  tutorSimStep = 1;
+  
+  terminalInput.value = '';
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '請在提示字元後輸入 ls 指令...';
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  if (promptEl) promptEl.textContent = 'user@server:~$';
+  
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const welcomeText = `【實戰演練模式 - 基礎 Linux 指令】
+您目前連線到一台虛擬的 Linux 伺服器，當前所在的目錄是使用者的家目錄 \`~\`。
+
+👉 **[步驟 1/5]** 請輸入 **\`ls\`** 指令，查看當前目錄底下的檔案與資料夾：`;
+  
+  outputHistory.appendChild(logBlock);
+  typeWriter(welcomeText, logBlock);
+}
+
+function processTutorSimInput(simQuery) {
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  const currentPromptText = promptEl ? promptEl.textContent : 'user@server:~$';
+
+  const queryLine = document.createElement('div');
+  queryLine.className = 'user-query-line';
+  queryLine.innerHTML = `
+    <span class="prompt-user">${escapeHTML(currentPromptText)}</span>
+    <span class="query-text">${escapeHTML(simQuery)}</span>
+  `;
+  logBlock.appendChild(queryLine);
+  outputHistory.appendChild(logBlock);
+  
+  terminalInput.value = '';
+  updateCursorPosition();
+  scrollToBottom();
+
+  const normalized = simQuery.toLowerCase().replace(/\s+/g, ' ').trim();
+
+  if (tutorSimStep === 1) {
+    if (normalized === 'ls') {
+      const output = `data  models  src  README.md  run.sh
+
+👉 **[步驟 2/5]** 成功列出目錄！您看見了 \`src\` 資料夾。
+請輸入 **\`cd src\`** 進入該資料夾以瀏覽原始碼。`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 2;
+      terminalInput.placeholder = '請輸入 cd src 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`ls\` 列出檔案清單。`, logBlock);
+    }
+  } else if (tutorSimStep === 2) {
+    if (normalized === 'cd src') {
+      if (promptEl) promptEl.textContent = 'user@server:~/src$';
+      const output = `👉 **[步驟 3/5]** 成功進入目錄！當前路徑已變更為 \`~/src\`。
+請輸入 **\`ls\`** 查看該目錄下的程式檔案。`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 3;
+      terminalInput.placeholder = '請輸入 ls 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`cd src\` 進入資料夾。`, logBlock);
+    }
+  } else if (tutorSimStep === 3) {
+    if (normalized === 'ls') {
+      const output = `main.py  preprocess.py  utils.py
+
+👉 **[步驟 4/5]** 成功列出檔案！
+為了確認您當前的絕對路徑，請輸入 **\`pwd\`**。`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 4;
+      terminalInput.placeholder = '請輸入 pwd 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`ls\` 列出檔案。`, logBlock);
+    }
+  } else if (tutorSimStep === 4) {
+    if (normalized === 'pwd') {
+      const output = `/home/user/my_project/src
+
+👉 **[步驟 5/5]** 成功顯示絕對路徑！
+最後，請輸入 **\`cd ..\`** 回到上層目錄，完成本次演練。`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 5;
+      terminalInput.placeholder = '請輸入 cd .. 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`pwd\` 檢視路徑。`, logBlock);
+    }
+  } else if (tutorSimStep === 5) {
+    if (normalized === 'cd ..') {
+      if (promptEl) promptEl.textContent = 'user@server:~$';
+      const output = `🎉 **[演練完成]**
+您已成功完成了 Linux 指令實戰演練！您已學會基本指令：
+- 使用 \`ls\` 瀏覽檔案與目錄。
+- 使用 \`cd\` 進入子目錄。
+- 使用 \`pwd\` 確認伺服器所在路徑。
+- 使用 \`cd ..\` 返回上層目錄。
+
+按 **\`Enter\`** 鍵返回主教學目錄...`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 6;
+      terminalInput.placeholder = '按 Enter 鍵返回教學選單...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`cd ..\` 返回上一層。`, logBlock);
+    }
+  } else if (tutorSimStep === 6) {
+    if (promptEl) promptEl.textContent = 'user@AOI-Lab:~$';
+    isTutorSimMode = false;
+    tutorSimStep = 0;
+    isTutorialMode = true;
+    showTutorMenu();
   }
 }
