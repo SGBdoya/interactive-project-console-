@@ -1,7 +1,11 @@
 const fs = require('fs');
 const crypto = require('crypto');
 
-const password = 'AOILab666';
+const password = process.argv[2];
+if (!password) {
+  console.error('Usage: node test_decrypt.js <password>');
+  process.exit(1);
+}
 
 function decryptFile(inputFile) {
   const payload = fs.readFileSync(inputFile);
