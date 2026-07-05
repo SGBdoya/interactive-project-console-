@@ -24,6 +24,9 @@ const themesList = [
 ];
 let activeThemeSelectorEl = null;
 
+// Tutorial Mode State
+let isTutorialMode = false;
+
 // Tab completion state
 let isTabCycling = false;
 let tabOriginalInput = '';
@@ -238,7 +241,36 @@ function submitQuery(query) {
 function processCommandOrQuery(query, logBlock) {
   const lowerQuery = query.toLowerCase().trim();
 
-  // 1. Check System Commands
+  // 1. Tutorial Mode Intercept
+  if (isTutorialMode) {
+    if (lowerQuery === 'exit' || lowerQuery === 'quit' || lowerQuery === 'q') {
+      isTutorialMode = false;
+      terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+      typeWriter('已關閉教學手冊模式。', logBlock);
+      return;
+    }
+    
+    // Check if input matches a tutorial unit (like '1', '[1]', 'linux')
+    const unitMatch = matchTutorialUnit(lowerQuery);
+    if (unitMatch) {
+      showTutorialUnit(unitMatch, logBlock);
+      return;
+    }
+    
+    // If user wants to clear screen, let it happen but exit tutorial mode
+    if (lowerQuery === 'clear' || lowerQuery === 'cls') {
+      isTutorialMode = false;
+      terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+      clearScreen();
+      return;
+    }
+    
+    // Fall-through: if it's a non-tutorial command, exit tutorial mode and continue processing
+    isTutorialMode = false;
+    terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+  }
+
+  // 2. Check System Commands
   if (lowerQuery === 'clear' || lowerQuery === 'cls') {
     clearScreen();
     // Remove the query block we just appended
@@ -336,85 +368,30 @@ function processCommandOrQuery(query, logBlock) {
   if (lowerQuery.startsWith('tutorial')) {
     const arg = lowerQuery.substring(8).trim();
     if (!arg) {
+      isTutorialMode = true;
+      terminalInput.placeholder = '輸入單元編號 (如 1、2) 或輸入 exit 退出教學模式...';
+      
       const tutorMenu = `【Linux 與實驗室環境快速上手教學手冊】
-請輸入 \`tutorial [單元編號 或 關鍵字]\` 閱讀對應單元教學：
+請直接輸入 <span class="highlight">[單元編號 或 關鍵字]</span> 閱讀對應單元教學，或輸入 <span class="highlight">exit</span> 退出：
 
   [1] linux   : 基礎 Linux 常用指令 (cd, ls, pwd)
   [2] tmux    : tmux 終端多工器 (如何在背景執行與掛載程序)
   [3] conda   : Conda 虛擬環境建立、啟動、列表與刪除
   [4] chmod   : 檔案執行權限設定 (chmod +x 腳本.sh)
 
-例如：輸入 \`tutorial 3\` 或是 \`tutorial conda\` 查看虛擬環境操作教學。`;
+💡 提示：現在您可以直接輸入數字（例如 \`1\`）來閱讀教學，輸入 \`exit\` 可隨時退出。`;
       typeWriter(tutorMenu, logBlock);
-    } else if (arg === '1' || arg === 'linux') {
-      const ch1 = `【[1] 基礎 Linux 指令教學】
-在伺服器環境中，所有操作都是使用指令進行：
-
-1. **pwd** : 顯示您當前所在的完整路徑目錄 (Print Working Directory)。
-2. **ls** : 列出當前目錄底下的所有檔案與子資料夾。
-   * 推薦：\`ls -la\` 可以顯示所有隱藏檔案 (如 \`.env\` 或 \`.git\`)，並列出權限、大小與修改日期。
-3. **cd [路徑]** : 切換工作目錄 (Change Directory)。
-   * 例如 \`cd src/\` 會進入 src 目錄。
-4. **cd ..** : 回到上一層目錄。(**注意：cd 與兩點之間必須有一個空格！** 不是 \`cd..\`)
-5. **cd ~** : 直接回到使用者的家目錄 (Home Directory)。`;
-      typeWriter(ch1, logBlock);
-    } else if (arg === '2' || arg === 'tmux') {
-      const ch2 = `【[2] tmux 終端多工器教學】
-在伺服器跑深度學習實驗或長時間任務時，一旦斷網或關閉終端機，跑一半的程式就會中斷。**tmux 可以讓程式在背景（離線）持續運行。**
-
-1. **建立新的背景視窗**：
-   \`tmux new -s [session名稱]\` (例如：\`tmux new -s train\`)
-   *進入後，您會看到下方有一條綠色的狀態列，代表您已成功處於 tmux 的視窗中。*
-2. **暫時分離退出 (Detach)**：
-   在視窗內按下鍵盤的 **\`Ctrl + B\`** 放開，接著按下 **\`D\`**。
-   *您會退回到原本的終端機。此時您的工作已在背景安全運行，可以放心關閉終端機視窗或電腦。*
-3. **列出背景運行的所有視窗**：
-   \`tmux ls\`
-4. **重新連接進入背景視窗 (Attach)**：
-   \`tmux a -t [session名稱]\` (for example: \`tmux a -t train\`)
-5. **強制關閉背景視窗**：
-   \`tmux kill-session -t [session名稱]\`
-6. **滑鼠與視窗滾動檢視 Log**：
-   在 tmux 中無法直接用滑鼠滾輪往上滑。請按 **\`Ctrl + B\`** 放開，再按 **\`[\`** 鍵，即可使用方向鍵或 PageUp/PageDown 上下查看歷史 Log。按 **\`Q\`** 可退出該滾動模式。`;
-      typeWriter(ch2, logBlock);
-    } else if (arg === '3' || arg === 'conda') {
-      const ch3 = `【[3] Conda 虛擬環境管理教學】
-為了避免不同 Python 專案的套件版本互相衝突（例如 A 專案要 PyTorch 1.12，B 專案要 2.0），我們使用 Conda 管理各自獨立的虛擬環境。
-
-1. **新建虛擬環境**：
-   \`conda create -n [環境名稱] python=[版本]\`
-   *例如：\`conda create -n twin_env python=3.9\`*
-2. **啟動環境**：
-   \`conda activate [環境名稱]\`
-   *例如：\`conda activate twin_env\`*
-   *啟動後，指令列最前方的括號會由 \`(base)\` 變為 \`(twin_env)\`。*
-3. **查看所有已建立的環境清單**：
-   \`conda env list\` 或是 \`conda info --envs\`
-4. **退出當前虛擬環境**：
-   \`conda deactivate\`
-5. **刪除整個虛擬環境**：
-   \`conda remove -n [環境名稱] --all\`
-   *例如：\`conda remove -n twin_env --all\`*`;
-      typeWriter(ch3, logBlock);
-    } else if (arg === '4' || arg === 'chmod') {
-      const ch4 = `【[4] 檔案執行權限設定 (chmod +x) 教學】
-在 Linux 系統中，新建的腳本檔案（如 \`.sh\` 檔案）預設是沒有執行權限的。如果您直接執行會出現 \`Permission denied\` 錯誤。
-
-1. **給予腳本執行權限**：
-   \`chmod +x [檔案名稱.sh]\`
-   *例如：\`chmod +x run.sh\`*
-2. **執行該腳本**：
-   使用 \`./\` 開頭代表執行當前目錄下的程式。
-   *例如：\`./run.sh\`*
-3. **查看檔案詳細權限**：
-   \`ls -lh [檔案名稱.sh]\`
-   *輸出中若包含 \`-rwxr-xr-x\`，其中的 \`x\` (eXecutable) 就代表該檔案已具備執行權限。*`;
-      typeWriter(ch4, logBlock);
     } else {
-      typeWriter(`無效的單元選擇：「${escapeHTML(arg)}」。請輸入 \`tutorial\` 查看正確的教學單元列表。`, logBlock);
+      const unitMatch = matchTutorialUnit(arg);
+      if (unitMatch) {
+        showTutorialUnit(unitMatch, logBlock);
+      } else {
+        typeWriter(`無效的單元選擇：「${escapeHTML(arg)}」。請輸入 \`tutorial\` 查看正確的教學單元列表。`, logBlock);
+      }
     }
     return;
   }
+
 
   // 2. Perform Keyword Matching
   const matchResult = searchFaqData(query);
@@ -817,5 +794,85 @@ function handleTabComplete() {
     isTabCycling = true;
     terminalInput.value = tabMatches[0];
     updateCursorPosition();
+  }
+}
+
+// Tutorial Unit Helper matches and displays
+function matchTutorialUnit(query) {
+  const cleanQuery = query.replace(/[\[\]]/g, '').trim();
+  
+  if (cleanQuery === '1' || cleanQuery === 'linux') return '1';
+  if (cleanQuery === '2' || cleanQuery === 'tmux') return '2';
+  if (cleanQuery === '3' || cleanQuery === 'conda') return '3';
+  if (cleanQuery === '4' || cleanQuery === 'chmod') return '4';
+  
+  return null;
+}
+
+function showTutorialUnit(unit, logBlock) {
+  if (unit === '1') {
+    const ch1 = `【[1] 基礎 Linux 指令教學】
+在伺服器環境中，所有操作都是使用指令進行：
+
+1. **pwd** : 顯示您當前所在的完整路徑目錄 (Print Working Directory)。
+2. **ls** : 列出當前目錄底下的所有檔案與子資料夾。
+   * 推薦：\`ls -la\` 可以顯示所有隱藏檔案 (如 \`.env\` 或 \`.git\`)，並列出權限、大小與修改日期。
+3. **cd [路徑]** : 切換工作目錄 (Change Directory)。
+   * 例如 \`cd src/\` 會進入 src 目錄。
+4. **cd ..** : 回到上一層目錄。(**注意：cd 與兩點之間必須有一個空格！** 不是 \`cd..\`)
+5. **cd ~** : 直接回到使用者的家目錄 (Home Directory)。`;
+    typeWriter(ch1, logBlock);
+  } else if (unit === '2') {
+    const ch2 = `【[2] tmux 終端多工器教學】
+在伺服器跑深度學習實驗或長時間任務時，一旦斷網或關閉終端機，跑一半的程式就會中斷。**tmux 可以讓程式在背景（離線）持續運行。**
+
+1. **建立新的背景視窗**：
+   \`tmux new -s [session名稱]\` (例如：\`tmux new -s train\`)
+   *進入後，您會看到下方有一條綠色的狀態列，代表您已成功處於 tmux 的視窗中。*
+2. **暫時分離退出 (Detach)**：
+   在視窗內按下鍵盤的 **\`Ctrl + B\`** 放開，接著按下 **\`D\`**。
+   *您會退回到原本的終端機。此時您的工作已在背景安全運行，可以放心關閉終端機視窗或電腦。*
+3. **列出背景運行的所有視窗**：
+   \`tmux ls\`
+4. **重新連接進入背景視窗 (Attach)**：
+   \`tmux a -t [session名稱]\` (例如：\`tmux a -t train\`)
+5. **強制關閉背景視窗**：
+   \`tmux kill-session -t [session名稱]\`
+6. **滑鼠與視窗滾動檢視 Log**：
+   在 tmux 中無法直接用滑鼠滾輪往上滑。請按 **\`Ctrl + B\`** 放開，再按 **\`[\`** 鍵，即可使用方向鍵或 PageUp/PageDown 上下查看歷史 Log。按 **\`Q\`** 可退出該滾動模式。`;
+    typeWriter(ch2, logBlock);
+  } else if (unit === '3') {
+    const ch3 = `【[3] Conda 虛擬環境管理教學】
+為了避免不同 Python 專案的套件版本互相衝突（例如 A 專案要 PyTorch 1.12，B 專案要 2.0），我們使用 Conda 管理各自獨立的虛擬環境。
+
+1. **新建虛擬環境**：
+   \`conda create -n [環境名稱] python=[版本]\`
+   *例如：\`conda create -n twin_env python=3.9\`*
+2. **啟動環境**：
+   \`conda activate [環境名稱]\`
+   *例如：\`conda activate twin_env\`*
+   *啟動後，指令列最前方的括號會由 \`(base)\` 變為 \`(twin_env)\`。*
+3. **查看所有已建立的環境清單**：
+   \`conda env list\` 或是 \`conda info --envs\`
+4. **退出當前虛擬環境**：
+   \`conda deactivate\`
+5. **刪除整個虛擬環境**：
+   \`conda remove -n [環境名稱] --all\`
+   *例如：\`conda remove -n twin_env --all\`*`;
+    typeWriter(ch3, logBlock);
+  } else if (unit === '4') {
+    const ch4 = `【[4] 檔案執行權限設定 (chmod +x) 教學】
+在 Linux 系統中，新建的腳本檔案（如 \`.sh\` 檔案）預設是沒有執行權限的。如果您直接執行會出現 \`Permission denied\` 錯誤。
+
+1. **給予腳本執行權限**：
+   \`chmod +x [檔案名稱.sh]\`
+   *例如：\`chmod +x run.sh\`*
+2. **執行該腳本**：
+   使用 \`./\` 開頭代表執行當前目錄下的程式。
+   *例如：\`./run.sh\`*
+3. **查看檔案詳細權限**：
+   \`ls -lh [檔案名稱.sh]\`
+   *輸出中若包含 \`-rwxr-xr-x\`，其中的 \`x\` (eXecutable) 就代表該檔案已具備執行權限。*`;
+    typeWriter(ch4, logBlock);
   }
 }
