@@ -37,6 +37,7 @@ let activeDecisionEl = null;
 
 let isTutorSimMode = false;
 let tutorSimStep = 0;
+let tutorCurrentChapter = '1';
 
 // Tab completion state
 let isTabCycling = false;
@@ -835,6 +836,11 @@ const autocompleteModes = {
       if (tutorSimStep === 3) return ['ls'];
       if (tutorSimStep === 4) return ['pwd'];
       if (tutorSimStep === 5) return ['cd ..'];
+      if (tutorSimStep === 11) return ['tmux new -s train'];
+      if (tutorSimStep === 12) return ['detach'];
+      if (tutorSimStep === 13) return ['tmux ls'];
+      if (tutorSimStep === 14) return ['tmux a -t train'];
+      if (tutorSimStep === 15) return ['exit'];
       return [];
     }
   },
@@ -932,6 +938,7 @@ function matchTutorialUnit(query) {
 
 function showTutorialUnit(unit, logBlock) {
   if (unit === '1') {
+    tutorCurrentChapter = '1';
     const ch1 = `【[1] 基礎 Linux 指令教學】
 在 Linux 系統中，所有檔案的操作與導覽都是透過指令完成。以下是五個最核心的基礎指令：
 
@@ -951,6 +958,7 @@ function showTutorialUnit(unit, logBlock) {
       renderDecisionMenu();
     });
   } else if (unit === '2') {
+    tutorCurrentChapter = '2';
     const ch2 = `【[2] tmux 終端多工器教學】
 在伺服器跑深度學習實驗或長時間任務時，一旦斷網或關閉終端機，跑一半的程式就會中斷。**tmux 可以讓程式在背景（離線）持續運行。**
 
@@ -968,7 +976,14 @@ function showTutorialUnit(unit, logBlock) {
    \`tmux kill-session -t [session名稱]\`
 6. **滑鼠與視窗滾動檢視 Log**：
    在 tmux 中無法直接用滑鼠滾輪往上滑。請按 **\`Ctrl + B\`** 放開，再按 **\`[\`** 鍵，即可使用方向鍵或 PageUp/PageDown 上下查看歷史 Log。按 **\`Q\`** 可退出該滾動模式。`;
-    typeWriter(ch2, logBlock);
+    typeWriter(ch2, logBlock, () => {
+      isTutorDecisionMode = true;
+      selectedDecisionIndex = 0;
+      activeDecisionEl = document.createElement('div');
+      activeDecisionEl.className = 'tutor-decision-block';
+      logBlock.appendChild(activeDecisionEl);
+      renderDecisionMenu();
+    });
   } else if (unit === '3') {
     const ch3 = `【[3] Conda 虛擬環境管理教學】
 為了避免不同 Python 專案的套件版本互相衝突（例如 A 專案要 PyTorch 1.12，B 專案要 2.0），我們使用 Conda 管理各自獨立的虛擬環境。
@@ -1052,7 +1067,11 @@ function confirmDecision() {
       activeDecisionEl.innerHTML = `<div style="color: var(--text-muted); margin-top: 10px;">已確認進入實戰演練模式。</div>`;
       activeDecisionEl = null;
     }
-    startLinuxSimulation();
+    if (tutorCurrentChapter === '1') {
+      startLinuxSimulation();
+    } else if (tutorCurrentChapter === '2') {
+      startTmuxSimulation();
+    }
   } else {
     if (activeDecisionEl) {
       activeDecisionEl.innerHTML = `<div style="color: var(--text-muted); margin-top: 10px;">已取消實戰演練，返回目錄。</div>`;
@@ -1188,7 +1207,106 @@ function processTutorSimInput(simQuery) {
     tutorSimStep = 0;
     isTutorialMode = true;
     showTutorMenu();
+  } else if (tutorSimStep === 11) {
+    if (normalized === 'tmux new -s train') {
+      const output = `* 成功建立並進入 tmux 背景會話 [Session: train] *
+* 注意：您的命令行最底端此時正開著 tmux 背景視窗。即便關閉連接，程式也不會中斷。*
+
+👉 **[步驟 2/4]** 現在假設您已經開跑了程式。
+請輸入 **\`detach\`**（模擬按鍵 \`Ctrl+B\` 後按 \`D\`）以將會話抽離至背景：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 12;
+      terminalInput.placeholder = '請輸入 detach 指令抽離視窗...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`tmux new -s train\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 12) {
+    if (normalized === 'detach') {
+      const output = `[detached (from session train)]
+* 成功分離視窗！會話目前正在背景安全運行。*
+
+👉 **[步驟 3/4]** 為了檢查目前背景運行的所有會話清單，請輸入 **\`tmux ls\`**：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 13;
+      terminalInput.placeholder = '請輸入 tmux ls 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`detach\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 13) {
+    if (normalized === 'tmux ls') {
+      const output = `train: 1 windows (created Sun Jul  5 21:30:00 2026) [80x24]
+
+👉 **[步驟 4/4]** 成功列出背景會話！
+現在您要重新連回該視窗檢查 Log 進度，請輸入 **\`tmux a -t train\`**：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 14;
+      terminalInput.placeholder = '請輸入 tmux a -t train 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`tmux ls\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 14) {
+    if (normalized === 'tmux a -t train' || normalized === 'tmux a' || normalized === 'tmux attach -t train') {
+      const output = `[attached to session train]
+* 成功重新連回 'train' 會話！*
+
+👉 **[最後步驟]** 任務已完成，現在要關閉並銷毀此會話視窗。
+請輸入 **\`exit\`** 來關閉視窗：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 15;
+      terminalInput.placeholder = '請輸入 exit 結束會話...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`tmux a -t train\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 15) {
+    if (normalized === 'exit') {
+      if (promptEl) promptEl.textContent = 'user@server:~$';
+      const output = `[exited]
+
+🎉 **[演練完成]**
+您已成功完成了 tmux 終端多工器實戰演練！您已學會：
+- 使用 \`tmux new -s\` 建立背景會話。
+- 使用 \`Ctrl+B D\` (編寫為 \`detach\`) 將會話抽離至背景。
+- 使用 \`tmux ls\` 檢查運行中的會話清單。
+- 使用 \`tmux a -t\` 重新附加回該會話。
+- 在會話中輸入 \`exit\` 來關閉並銷毀會話。
+
+按 **\`Enter\`** 鍵返回主教學目錄...`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 16;
+      terminalInput.placeholder = '按 Enter 鍵返回教學選單...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`exit\` 結束會話。`, logBlock);
+    }
+  } else if (tutorSimStep === 16) {
+    if (promptEl) promptEl.textContent = 'user@AOI-Lab:~$';
+    isTutorSimMode = false;
+    tutorSimStep = 0;
+    isTutorialMode = true;
+    showTutorMenu();
   }
+}
+
+function startTmuxSimulation() {
+  isTutorSimMode = true;
+  tutorSimStep = 11;
+  
+  terminalInput.value = '';
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '請在提示字元後輸入 tmux new -s train 指令...';
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  if (promptEl) promptEl.textContent = 'user@server:~$';
+  
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const welcomeText = `【實戰演練模式 - tmux 終端多工器】
+在伺服器跑耗時的實驗時，為了在關閉終端機後讓程式不中斷，我們建立名為 \`train\` 的背景視窗。
+
+👉 **[步驟 1/4]** 請輸入 **\`tmux new -s train\`** 來建立新會話：`;
+  
+  outputHistory.appendChild(logBlock);
+  typeWriter(welcomeText, logBlock);
 }
 
 
