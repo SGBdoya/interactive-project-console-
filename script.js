@@ -181,6 +181,9 @@ function handleKeyDown(e) {
       e.preventDefault();
       const simQuery = terminalInput.value.trim();
       processTutorSimInput(simQuery);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      handleTutorSimTabComplete();
     }
     return;
   }
@@ -833,31 +836,44 @@ function handleTabComplete() {
   tabMatches = [];
   tabMatchIndex = 0;
 
-  // Compile completions list based on input state
-  if (currentInput.toLowerCase().startsWith('cat ')) {
-    const term = currentInput.substring(4);
-    const idCandidates = faqData.map(d => d.id);
-    const matchedIds = idCandidates.filter(id => id.toLowerCase().startsWith(term.toLowerCase()));
-    tabMatches = matchedIds.map(id => 'cat ' + id);
-  } else if (currentInput.toLowerCase().startsWith('theme ')) {
-    const term = currentInput.substring(6);
-    const themeCandidates = ['matrix', 'amber', 'cyberpunk', 'dracula', 'solarized', 'light'];
-    const matchedThemes = themeCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
-    tabMatches = matchedThemes.map(t => 'theme ' + t);
-  } else if (currentInput.toLowerCase().startsWith('tutorial ')) {
-    const term = currentInput.substring(9);
-    const tutorCandidates = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod'];
-    const matchedTutors = tutorCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
-    tabMatches = matchedTutors.map(t => 'tutorial ' + t);
-  } else {
-    // Normal command list or general question keyword completions
-    const commandCandidates = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat', 'tutorial'];
-    const idCandidates = faqData.map(d => d.id);
-    const keywordCandidates = [...new Set(faqData.flatMap(d => d.keywords))];
+  const inputLower = currentInput.toLowerCase();
 
-    const allCandidates = [...commandCandidates, ...idCandidates, ...keywordCandidates];
-    // Filter matching completions by prefix (case-insensitive)
-    tabMatches = allCandidates.filter(c => c.toLowerCase().startsWith(currentInput.toLowerCase()));
+  // 1. Context-aware completions based on modes
+  if (isTutorialMode) {
+    const tutorModeCandidates = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod', 'exit', 'quit', 'clear', 'cls'];
+    tabMatches = tutorModeCandidates.filter(c => c.startsWith(inputLower));
+  } else if (isFaqListMode) {
+    const faqIds = faqData.map(d => d.id.toLowerCase());
+    const faqIndexes = Array.from({ length: faqData.length }, (_, i) => String(i + 1));
+    const faqModeCandidates = [...faqIds, ...faqIndexes, 'exit', 'quit', 'clear', 'cls'];
+    tabMatches = faqModeCandidates.filter(c => c.startsWith(inputLower));
+  } else {
+    // 2. Standard Mode Autocompletions
+    if (inputLower.startsWith('cat ')) {
+      const term = currentInput.substring(4);
+      const idCandidates = faqData.map(d => d.id);
+      const matchedIds = idCandidates.filter(id => id.toLowerCase().startsWith(term.toLowerCase()));
+      tabMatches = matchedIds.map(id => 'cat ' + id);
+    } else if (inputLower.startsWith('theme ')) {
+      const term = currentInput.substring(6);
+      const themeCandidates = ['matrix', 'amber', 'cyberpunk', 'dracula', 'solarized', 'light'];
+      const matchedThemes = themeCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
+      tabMatches = matchedThemes.map(t => 'theme ' + t);
+    } else if (inputLower.startsWith('tutorial ')) {
+      const term = currentInput.substring(9);
+      const tutorCandidates = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod'];
+      const matchedTutors = tutorCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
+      tabMatches = matchedTutors.map(t => 'tutorial ' + t);
+    } else {
+      // Normal command list or general question keyword completions
+      const commandCandidates = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat', 'tutorial'];
+      const idCandidates = faqData.map(d => d.id);
+      const keywordCandidates = [...new Set(faqData.flatMap(d => d.keywords))];
+
+      const allCandidates = [...commandCandidates, ...idCandidates, ...keywordCandidates];
+      // Filter matching completions by prefix (case-insensitive)
+      tabMatches = allCandidates.filter(c => c.toLowerCase().startsWith(inputLower));
+    }
   }
 
   // If match candidates found, apply the first one and turn on cycling mode
@@ -1138,5 +1154,28 @@ function processTutorSimInput(simQuery) {
     tutorSimStep = 0;
     isTutorialMode = true;
     showTutorMenu();
+  }
+}
+
+// Linux Simulated Console Tab Autocompletions
+function handleTutorSimTabComplete() {
+  const currentInput = terminalInput.value;
+  let targetCommand = '';
+
+  if (tutorSimStep === 1) {
+    targetCommand = 'ls';
+  } else if (tutorSimStep === 2) {
+    targetCommand = 'cd src';
+  } else if (tutorSimStep === 3) {
+    targetCommand = 'ls';
+  } else if (tutorSimStep === 4) {
+    targetCommand = 'pwd';
+  } else if (tutorSimStep === 5) {
+    targetCommand = 'cd ..';
+  }
+
+  if (targetCommand && targetCommand.startsWith(currentInput.toLowerCase().trim())) {
+    terminalInput.value = targetCommand;
+    updateCursorPosition();
   }
 }
