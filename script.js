@@ -841,6 +841,11 @@ const autocompleteModes = {
       if (tutorSimStep === 13) return ['tmux ls'];
       if (tutorSimStep === 14) return ['tmux a -t train'];
       if (tutorSimStep === 15) return ['exit'];
+      if (tutorSimStep === 21) return ['conda create -n twin_env python=3.9'];
+      if (tutorSimStep === 22) return ['conda activate twin_env'];
+      if (tutorSimStep === 23) return ['conda env list'];
+      if (tutorSimStep === 24) return ['conda deactivate'];
+      if (tutorSimStep === 25) return ['conda remove -n twin_env --all'];
       return [];
     }
   },
@@ -985,6 +990,7 @@ function showTutorialUnit(unit, logBlock) {
       renderDecisionMenu();
     });
   } else if (unit === '3') {
+    tutorCurrentChapter = '3';
     const ch3 = `【[3] Conda 虛擬環境管理教學】
 為了避免不同 Python 專案的套件版本互相衝突（例如 A 專案要 PyTorch 1.12，B 專案要 2.0），我們使用 Conda 管理各自獨立的虛擬環境。
 
@@ -1002,7 +1008,14 @@ function showTutorialUnit(unit, logBlock) {
 5. **刪除整個虛擬環境**：
    \`conda remove -n [環境名稱] --all\`
    *例如：\`conda remove -n twin_env --all\`*`;
-    typeWriter(ch3, logBlock);
+    typeWriter(ch3, logBlock, () => {
+      isTutorDecisionMode = true;
+      selectedDecisionIndex = 0;
+      activeDecisionEl = document.createElement('div');
+      activeDecisionEl.className = 'tutor-decision-block';
+      logBlock.appendChild(activeDecisionEl);
+      renderDecisionMenu();
+    });
   } else if (unit === '4') {
     const ch4 = `【[4] 檔案執行權限設定 (chmod +x) 教學】
 在 Linux 系統中，新建的腳本檔案（如 \`.sh\` 檔案）預設是沒有執行權限的。如果您直接執行會出現 \`Permission denied\` 錯誤。
@@ -1071,6 +1084,8 @@ function confirmDecision() {
       startLinuxSimulation();
     } else if (tutorCurrentChapter === '2') {
       startTmuxSimulation();
+    } else if (tutorCurrentChapter === '3') {
+      startCondaSimulation();
     }
   } else {
     if (activeDecisionEl) {
@@ -1283,6 +1298,93 @@ function processTutorSimInput(simQuery) {
     tutorSimStep = 0;
     isTutorialMode = true;
     showTutorMenu();
+  } else if (tutorSimStep === 21) {
+    if (normalized === 'conda create -n twin_env python=3.9') {
+      const output = `Retrieving package metadata... Done.
+Solving environment... Done.
+Preparing transaction... Done.
+Verifying transaction... Done.
+Executing transaction... Done.
+#
+# To activate this environment, use
+#     $ conda activate twin_env
+#
+# To deactivate an active environment, use
+#     $ conda deactivate
+
+👉 **[步驟 2/5]** 成功建立虛擬環境 'twin_env'！
+現在請輸入 **\`conda activate twin_env\`** 啟動此虛擬環境：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 22;
+      terminalInput.placeholder = '請輸入 conda activate twin_env 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`conda create -n twin_env python=3.9\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 22) {
+    if (normalized === 'conda activate twin_env') {
+      if (promptEl) promptEl.textContent = '(twin_env) user@server:~$';
+      const output = `* 成功啟用虛擬環境！注意最前方出現了 (twin_env) 標記，代表當前安裝的套件皆為該環境獨立所有。*
+
+👉 **[步驟 3/5]** 請輸入 **\`conda env list\`**（或 \`conda info --envs\`）來查看所有已建立環境的清單：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 23;
+      terminalInput.placeholder = '請輸入 conda env list 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`conda activate twin_env\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 23) {
+    if (normalized === 'conda env list' || normalized === 'conda info --envs') {
+      const output = `# conda environments:
+#
+base                     /home/user/miniconda3
+twin_env              *  /home/user/miniconda3/envs/twin_env
+
+👉 **[步驟 4/5]** 成功列出虛擬環境！（帶星號 \`*\` 代表當前處於該環境內）
+現在請輸入 **\`conda deactivate\`** 退出此環境：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 24;
+      terminalInput.placeholder = '請輸入 conda deactivate 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`conda env list\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 24) {
+    if (normalized === 'conda deactivate') {
+      if (promptEl) promptEl.textContent = 'user@server:~$';
+      const output = `* 成功退出環境，回到預設的 (base) 系統環境（(twin_env) 標記已消失）。*
+
+👉 **[最後步驟]** 為了清理磁碟，請輸入 **\`conda remove -n twin_env --all\`** 徹底刪除此虛擬環境：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 25;
+      terminalInput.placeholder = '請輸入 conda remove -n twin_env --all 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`conda deactivate\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 25) {
+    if (normalized === 'conda remove -n twin_env --all') {
+      const output = `Remove all packages in environment /home/user/miniconda3/envs/twin_env:
+Done.
+
+🎉 **[演練完成]**
+您已成功完成了 Conda 虛擬環境管理實戰演練！您已學會：
+- 使用 \`conda create\` 建立獨立的虛擬環境。
+- 使用 \`conda activate\` 啟動與切換虛擬環境。
+- 使用 \`conda env list\` 檢視系統中的所有環境。
+- 使用 \`conda deactivate\` 退出當前虛擬環境。
+- 使用 \`conda remove -n --all\` 徹底刪除環境釋放空間。
+
+按 **\`Enter\`** 鍵返回主教學目錄...`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 26;
+      terminalInput.placeholder = '按 Enter 鍵返回教學選單...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`conda remove -n twin_env --all\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 26) {
+    if (promptEl) promptEl.textContent = 'user@AOI-Lab:~$';
+    isTutorSimMode = false;
+    tutorSimStep = 0;
+    isTutorialMode = true;
+    showTutorMenu();
   }
 }
 
@@ -1304,6 +1406,29 @@ function startTmuxSimulation() {
 在伺服器跑耗時的實驗時，為了在關閉終端機後讓程式不中斷，我們建立名為 \`train\` 的背景視窗。
 
 👉 **[步驟 1/4]** 請輸入 **\`tmux new -s train\`** 來建立新會話：`;
+  
+  outputHistory.appendChild(logBlock);
+  typeWriter(welcomeText, logBlock);
+}
+
+function startCondaSimulation() {
+  isTutorSimMode = true;
+  tutorSimStep = 21;
+  
+  terminalInput.value = '';
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '請在提示字元後輸入 conda create -n twin_env python=3.9 指令...';
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  if (promptEl) promptEl.textContent = 'user@server:~$';
+  
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const welcomeText = `【實戰演練模式 - Conda 虛擬環境管理】
+為了防止不同專案的套件版本互相衝突，我們使用 Conda 來建立獨立隔離的虛擬環境。
+
+👉 **[步驟 1/5]** 請輸入 **\`conda create -n twin_env python=3.9\`** 來建立新環境：`;
   
   outputHistory.appendChild(logBlock);
   typeWriter(welcomeText, logBlock);
