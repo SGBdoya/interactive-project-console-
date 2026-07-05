@@ -372,7 +372,7 @@ function processCommandOrQuery(query, logBlock) {
       terminalInput.placeholder = '輸入單元編號 (如 1、2) 或輸入 exit 退出教學模式...';
       
       const tutorMenu = `【Linux 與實驗室環境快速上手教學手冊】
-請直接輸入 <span class="highlight">[單元編號 或 關鍵字]</span> 閱讀對應單元教學，或輸入 <span class="highlight">exit</span> 退出：
+請直接輸入 **[單元編號 或 關鍵字]** 閱讀對應單元教學，或輸入 **exit** 退出：
 
   [1] linux   : 基礎 Linux 常用指令 (cd, ls, pwd)
   [2] tmux    : tmux 終端多工器 (如何在背景執行與掛載程序)
