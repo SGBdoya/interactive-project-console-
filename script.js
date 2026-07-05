@@ -160,6 +160,11 @@ function updateCursorPosition() {
 
 // Handle Key Events in Input
 function handleKeyDown(e) {
+  // Reset tab cycle if any key other than Tab is pressed
+  if (e.key !== 'Tab') {
+    isTabCycling = false;
+  }
+
   if (isTutorDecisionMode) {
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
@@ -209,10 +214,7 @@ function handleKeyDown(e) {
     return;
   }
 
-  // Reset tab cycle if any key other than Tab is pressed
-  if (e.key !== 'Tab') {
-    isTabCycling = false;
-  }
+
 
   if (e.key === 'Enter') {
     const query = terminalInput.value.trim();
