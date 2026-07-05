@@ -10,6 +10,17 @@ let isTypingActive = false;
 let typingTimeoutId = null;
 let currentTheme = 'matrix';
 
+// Interactive Theme Selection Mode State
+let isThemeSelectionMode = false;
+let selectedThemeIndex = 0;
+let tempThemeBeforeSelection = '';
+const themesList = [
+  { id: 'matrix', name: 'Matrix 經典綠 (預設)' },
+  { id: 'amber', name: 'Fallout 琥珀黃' },
+  { id: 'cyberpunk', name: 'Cyberpunk 霓虹' }
+];
+let activeThemeSelectorEl = null;
+
 // DOM Elements
 const terminalInput = document.getElementById('terminal-input');
 const cursor = document.querySelector('.cursor');
@@ -125,6 +136,26 @@ function updateCursorPosition() {
 
 // Handle Key Events in Input
 function handleKeyDown(e) {
+  if (isThemeSelectionMode) {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      navigateThemeSelection(-1);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      navigateThemeSelection(1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmThemeSelection();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelThemeSelection();
+    } else {
+      // Ignore normal inputs during selection mode
+      e.preventDefault();
+    }
+    return;
+  }
+
   if (e.key === 'Enter') {
     const query = terminalInput.value.trim();
     if (query) {
@@ -245,16 +276,7 @@ function processCommandOrQuery(query, logBlock) {
   if (lowerQuery.startsWith('theme')) {
     const arg = lowerQuery.substring(5).trim();
     if (!arg) {
-      const themeListText = `【系統配色主題設定】
-當前主題：${currentTheme.toUpperCase()}
-
-請輸入 \`theme [數字 或 名稱]\` 來選擇配色：
-[1] matrix      : 經典綠客駭客風格 (預設)
-[2] amber       : 復古輻射橘黃風格
-[3] cyberpunk   : 霓虹賽博朋克風格
-
-例如：\`theme 2\` 或 \`theme cyberpunk\``;
-      typeWriter(themeListText, logBlock);
+      startThemeSelection(logBlock);
     } else {
       let targetTheme = '';
       if (arg === '1' || arg === 'matrix') targetTheme = 'matrix';
@@ -265,7 +287,7 @@ function processCommandOrQuery(query, logBlock) {
         setTheme(targetTheme);
         typeWriter(`主題已成功變更為：${targetTheme.toUpperCase()}`, logBlock);
       } else {
-        typeWriter(`無效的主題選擇：「${escapeHTML(arg)}」。請輸入 \`theme\` 查看可用主題列表。`, logBlock);
+        typeWriter(`無效的主題選擇：「${escapeHTML(arg)}」。請輸入 \`theme\` 進入互動選擇或查看可用主題列表。`, logBlock);
       }
     }
     return;
@@ -519,6 +541,104 @@ function toggleCRT() {
   } else {
     crtToggleBtn.classList.add('active');
   }
+}
+
+// Interactive Theme Selector functions
+function startThemeSelection(logBlock) {
+  isThemeSelectionMode = true;
+  tempThemeBeforeSelection = currentTheme;
+  
+  // Find current theme index
+  selectedThemeIndex = themesList.findIndex(t => t.id === currentTheme);
+  if (selectedThemeIndex === -1) selectedThemeIndex = 0;
+  
+  terminalInput.value = '';
+  terminalInput.readOnly = true;
+  terminalInput.placeholder = '使用 [↑/↓] 選擇主題，[Enter] 確認，[Esc] 取消';
+  
+  activeThemeSelectorEl = document.createElement('div');
+  activeThemeSelectorEl.className = 'theme-selector-menu';
+  logBlock.appendChild(activeThemeSelectorEl);
+  
+  renderThemeSelectionMenu();
+}
+
+function renderThemeSelectionMenu() {
+  if (!activeThemeSelectorEl) return;
+  
+  let html = `<div style="color: var(--text-secondary); margin-bottom: 6px;">
+    【主題設定模式】<br>
+    請使用方向鍵 <span class="highlight">[↑ / ↓]</span> 選擇主題，按 <span class="highlight">[Enter]</span> 確認，或 <span class="highlight">[Esc]</span> 取消：
+  </div>`;
+  
+  themesList.forEach((theme, index) => {
+    const isSelected = index === selectedThemeIndex;
+    const pointer = isSelected ? '➔ ' : '   ';
+    const activeClass = isSelected ? 'class="highlight"' : '';
+    const radioIcon = isSelected ? '<i class="fa-regular fa-circle-dot"></i>' : '<i class="fa-regular fa-circle"></i>';
+    
+    html += `<div style="padding-left: 10px; line-height: 1.8; ${isSelected ? 'background: rgba(255,255,255,0.05);' : ''}">
+      <span class="highlight">${pointer}</span>${radioIcon} <span ${activeClass}>${theme.name}</span>
+    </div>`;
+  });
+  
+  activeThemeSelectorEl.innerHTML = html;
+  
+  // Apply theme live!
+  setTheme(themesList[selectedThemeIndex].id);
+  scrollToBottom();
+}
+
+function navigateThemeSelection(direction) {
+  selectedThemeIndex += direction;
+  if (selectedThemeIndex < 0) {
+    selectedThemeIndex = themesList.length - 1;
+  } else if (selectedThemeIndex >= themesList.length) {
+    selectedThemeIndex = 0;
+  }
+  renderThemeSelectionMenu();
+}
+
+function confirmThemeSelection() {
+  isThemeSelectionMode = false;
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+  
+  const chosenTheme = themesList[selectedThemeIndex];
+  
+  if (activeThemeSelectorEl) {
+    activeThemeSelectorEl.innerHTML = `
+      <div style="color: var(--text-muted);">
+        主題設定完成。已鎖定主題：<span class="highlight">${chosenTheme.name}</span>
+      </div>
+    `;
+    activeThemeSelectorEl = null;
+  }
+  
+  terminalInput.focus();
+  scrollToBottom();
+}
+
+function cancelThemeSelection() {
+  isThemeSelectionMode = false;
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+  
+  // Restore original theme
+  setTheme(tempThemeBeforeSelection);
+  
+  if (activeThemeSelectorEl) {
+    const origThemeName = themesList.find(t => t.id === tempThemeBeforeSelection).name;
+    activeThemeSelectorEl.innerHTML = `
+      <div style="color: var(--text-muted);">
+        已取消主題變更。恢復原主題：<span class="highlight">${origThemeName}</span>
+      </div>
+    `;
+    activeThemeSelectorEl = null;
+  }
+  
+  terminalInput.focus();
+  scrollToBottom();
 }
 
 // Local Fallback JSON in case fetch fails
