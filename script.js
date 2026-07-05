@@ -21,6 +21,12 @@ const themesList = [
 ];
 let activeThemeSelectorEl = null;
 
+// Tab completion state
+let isTabCycling = false;
+let tabOriginalInput = '';
+let tabMatches = [];
+let tabMatchIndex = 0;
+
 // DOM Elements
 const terminalInput = document.getElementById('terminal-input');
 const cursor = document.querySelector('.cursor');
@@ -156,6 +162,11 @@ function handleKeyDown(e) {
     return;
   }
 
+  // Reset tab cycle if any key other than Tab is pressed
+  if (e.key !== 'Tab') {
+    isTabCycling = false;
+  }
+
   if (e.key === 'Enter') {
     const query = terminalInput.value.trim();
     if (query) {
@@ -184,6 +195,9 @@ function handleKeyDown(e) {
       }
       updateCursorPosition();
     }
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    handleTabComplete();
   }
 }
 
@@ -668,4 +682,52 @@ function getFallbackFaqData() {
       "answer": "【環境安裝說明】\n1. 確保您的系統已安裝 Python 3.9+\n2. 安裝套件：`pip install -r requirements.txt`"
     }
   ];
+}
+
+// Handle Tab Autocompletes
+function handleTabComplete() {
+  const currentInput = terminalInput.value;
+  if (!currentInput.trim()) return;
+
+  if (isTabCycling && tabMatches.length > 0) {
+    // Cycle to the next match
+    tabMatchIndex = (tabMatchIndex + 1) % tabMatches.length;
+    terminalInput.value = tabMatches[tabMatchIndex];
+    updateCursorPosition();
+    return;
+  }
+
+  // Initial trigger for Tab autocomplete
+  tabOriginalInput = currentInput;
+  tabMatches = [];
+  tabMatchIndex = 0;
+
+  // Compile completions list based on input state
+  if (currentInput.toLowerCase().startsWith('cat ')) {
+    const term = currentInput.substring(4);
+    const idCandidates = faqData.map(d => d.id);
+    const matchedIds = idCandidates.filter(id => id.toLowerCase().startsWith(term.toLowerCase()));
+    tabMatches = matchedIds.map(id => 'cat ' + id);
+  } else if (currentInput.toLowerCase().startsWith('theme ')) {
+    const term = currentInput.substring(6);
+    const themeCandidates = ['matrix', 'amber', 'cyberpunk'];
+    const matchedThemes = themeCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
+    tabMatches = matchedThemes.map(t => 'theme ' + t);
+  } else {
+    // Normal command list or general question keyword completions
+    const commandCandidates = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat'];
+    const idCandidates = faqData.map(d => d.id);
+    const keywordCandidates = [...new Set(faqData.flatMap(d => d.keywords))];
+
+    const allCandidates = [...commandCandidates, ...idCandidates, ...keywordCandidates];
+    // Filter matching completions by prefix (case-insensitive)
+    tabMatches = allCandidates.filter(c => c.toLowerCase().startsWith(currentInput.toLowerCase()));
+  }
+
+  // If match candidates found, apply the first one and turn on cycling mode
+  if (tabMatches.length > 0) {
+    isTabCycling = true;
+    terminalInput.value = tabMatches[0];
+    updateCursorPosition();
+  }
 }
