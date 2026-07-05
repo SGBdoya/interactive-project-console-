@@ -5,6 +5,8 @@
 // State variables
 let faqData = [];
 let funFaqData = [];
+let restaurantPool = [];
+let moodPool = [];
 let commandHistory = [];
 let historyIndex = -1;
 let isTypingActive = false;
@@ -73,8 +75,16 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (resFaq.ok) faqData = await resFaq.json();
     else faqData = getFallbackFaqData();
 
-    if (resFun.ok) funFaqData = await resFun.json();
-    else funFaqData = [];
+    if (resFun.ok) {
+      const funJson = await resFun.json();
+      funFaqData = funJson.questions || [];
+      restaurantPool = funJson.restaurants || [];
+      moodPool = funJson.moods || [];
+    } else {
+      funFaqData = [];
+      restaurantPool = [];
+      moodPool = [];
+    }
     
     console.log('FAQ data loaded:', faqData);
     console.log('Fun FAQ data loaded:', funFaqData);
@@ -83,6 +93,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error('Failed to load databases, using fallback:', error);
     faqData = getFallbackFaqData();
     funFaqData = [];
+    restaurantPool = [];
+    moodPool = [];
     generateSuggestionChips();
   }
 
@@ -266,7 +278,7 @@ function handleKeyDown(e) {
 function formatAnswer(answer) {
   if (!answer) return '';
   
-  const restaurants = [
+  const restaurants = restaurantPool.length > 0 ? restaurantPool : [
     '學校學餐大盤雞 🍗',
     '超商關東煮跟茶葉蛋 🥚',
     '學區巷口古早味排骨飯 🍱',
@@ -279,7 +291,7 @@ function formatAnswer(answer) {
     '健康減脂水煮餐（學長督促你） 🥗'
   ];
   
-  const moods = [
+  const moods = moodPool.length > 0 ? moodPool : [
     '☀️ 陽光普照（教授心情極佳，提案或請假簽名趁現在！）',
     '⛅ 晴時多雲（普通，Meeting 時正常報告即可）',
     '🌧️ 陰雨綿綿（稍微低氣壓，進辦公室前深呼吸，講話客氣點）',
