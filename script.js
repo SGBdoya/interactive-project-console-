@@ -848,6 +848,9 @@ const autocompleteModes = {
       if (tutorSimStep === 23) return ['conda env list'];
       if (tutorSimStep === 24) return ['conda deactivate'];
       if (tutorSimStep === 25) return ['conda remove -n twin_env --all'];
+      if (tutorSimStep === 31) return ['ls -lh run.sh'];
+      if (tutorSimStep === 32) return ['chmod +x run.sh'];
+      if (tutorSimStep === 33) return ['./run.sh'];
       return [];
     }
   },
@@ -1019,6 +1022,7 @@ function showTutorialUnit(unit, logBlock) {
       renderDecisionMenu();
     });
   } else if (unit === '4') {
+    tutorCurrentChapter = '4';
     const ch4 = `【[4] 檔案執行權限設定 (chmod +x) 教學】
 在 Linux 系統中，新建的腳本檔案（如 \`.sh\` 檔案）預設是沒有執行權限的。如果您直接執行會出現 \`Permission denied\` 錯誤。
 
@@ -1031,7 +1035,14 @@ function showTutorialUnit(unit, logBlock) {
 3. **查看檔案詳細權限**：
    \`ls -lh [檔案名稱.sh]\`
    *輸出中若包含 \`-rwxr-xr-x\`，其中的 \`x\` (eXecutable) 就代表該檔案已具備執行權限。*`;
-    typeWriter(ch4, logBlock);
+    typeWriter(ch4, logBlock, () => {
+      isTutorDecisionMode = true;
+      selectedDecisionIndex = 0;
+      activeDecisionEl = document.createElement('div');
+      activeDecisionEl.className = 'tutor-decision-block';
+      logBlock.appendChild(activeDecisionEl);
+      renderDecisionMenu();
+    });
   }
 }
 
@@ -1088,6 +1099,8 @@ function confirmDecision() {
       startTmuxSimulation();
     } else if (tutorCurrentChapter === '3') {
       startCondaSimulation();
+    } else if (tutorCurrentChapter === '4') {
+      startChmodSimulation();
     }
   } else {
     if (activeDecisionEl) {
@@ -1387,6 +1400,56 @@ Done.
     tutorSimStep = 0;
     isTutorialMode = true;
     showTutorMenu();
+  } else if (tutorSimStep === 31) {
+    if (normalized === 'ls -lh run.sh' || normalized === 'ls -l run.sh') {
+      const output = `-rw-r--r-- 1 user user 150 Jul  5 21:40 run.sh
+
+👉 **[步驟 2/3]** 檔案權限顯示為 \`-rw-r--r--\`，這代表它目前只具備讀寫權限，尚無執行權限（無 'x' 字母）。
+如果此時直接執行會報出 Permission denied 錯誤。
+現在請輸入 **\`chmod +x run.sh\`** 指令，為此腳本開啟執行權限：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 32;
+      terminalInput.placeholder = '請輸入 chmod +x run.sh 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`ls -lh run.sh\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 32) {
+    if (normalized === 'chmod +x run.sh') {
+      const output = `-rwxr-xr-x 1 user user 150 Jul  5 21:40 run.sh
+* 成功更新權限為 -rwxr-xr-x！現在該檔案已具備執行權限（x 標記已出現）。*
+
+👉 **[步驟 3/3]** 請輸入 **\`./run.sh\`** 指令來執行此腳本：`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 33;
+      terminalInput.placeholder = '請輸入 ./run.sh 指令...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`chmod +x run.sh\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 33) {
+    if (normalized === './run.sh') {
+      const output = `[INFO] Starting Digital Twin Sim2Real pipeline...
+[INFO] Loading parameters from config.yaml...
+[SUCCESS] Pipeline executed successfully! Output saved to results/
+ 
+🎉 **[演練完成]**
+您已成功完成了 chmod 檔案執行權限實戰演練！您已學會：
+- 使用 \`ls -lh\` 檢查檔案詳細權限（無 'x' 代表無法執行）。
+- 使用 \`chmod +x\` 給予檔案可執行的權限。
+- 使用 \`./\` 開頭執行當前目錄下的腳本檔案。
+
+按 **\`Enter\`** 鍵返回主教學目錄...`;
+      typeWriter(output, logBlock);
+      tutorSimStep = 34;
+      terminalInput.placeholder = '按 Enter 鍵返回教學選單...';
+    } else {
+      typeWriter(`* 輸入錯誤：「${escapeHTML(simQuery)}」。請輸入 \`./run.sh\`。`, logBlock);
+    }
+  } else if (tutorSimStep === 34) {
+    if (promptEl) promptEl.textContent = 'user@AOI-Lab:~$';
+    isTutorSimMode = false;
+    tutorSimStep = 0;
+    isTutorialMode = true;
+    showTutorMenu();
   }
 }
 
@@ -1431,6 +1494,29 @@ function startCondaSimulation() {
 為了防止不同專案的套件版本互相衝突，我們使用 Conda 來建立獨立隔離的虛擬環境。
 
 👉 **[步驟 1/5]** 請輸入 **\`conda create -n twin_env python=3.9\`** 來建立新環境：`;
+  
+  outputHistory.appendChild(logBlock);
+  typeWriter(welcomeText, logBlock);
+}
+
+function startChmodSimulation() {
+  isTutorSimMode = true;
+  tutorSimStep = 31;
+  
+  terminalInput.value = '';
+  terminalInput.readOnly = false;
+  terminalInput.placeholder = '請在提示字元後輸入 ls -lh run.sh 指令...';
+  
+  const promptEl = document.querySelector('.input-line .prompt');
+  if (promptEl) promptEl.textContent = 'user@server:~$';
+  
+  const logBlock = document.createElement('div');
+  logBlock.className = 'terminal-block';
+  
+  const welcomeText = `【實戰演練模式 - 檔案執行權限設定 (chmod +x)】
+在 Linux 系統中，剛下載或新建的指令碼腳本檔案（如 \`run.sh\`）預設是沒有執行權限的，我們需要手動為它加上可執行權限。
+
+👉 **[步驟 1/3]** 請輸入 **\`ls -lh run.sh\`** 以檢視當前該腳本的詳細權限資訊：`;
   
   outputHistory.appendChild(logBlock);
   typeWriter(welcomeText, logBlock);
