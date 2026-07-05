@@ -890,45 +890,16 @@ function showTutorialUnit(unit, logBlock) {
    * 💡 *進階提示：使用 \`ls -la\` 可以列出詳細資料（包括權限、擁有者、修改日期）以及開頭為點的隱藏檔案（如 \`.env\` 或 \`.gitignore\`）。*
 3. **cd [路徑]** (Change Directory) : 切換當前的工作目錄。
 4. **cd ..** : 回到「上一層」目錄。(**注意：cd 與點點之間一定要有「空格」，寫成 \`cd..\` 在 Linux 會報錯！**)
-5. **cd ~** : 直接回到當前使用者的「家目錄」（Home Directory）。
-
----
-
-🎬 **【學弟實戰演練：完整目錄操作示範】**
-
-假設伺服器上有個專案目錄，我們可以這樣操作：
-
-Step 1: 先查看當前目錄有哪些東西
-\`\`\`bash
-user@server:~$ ls
-data  models  src  README.md  run.sh
-\`\`\`
-*(看到了三個資料夾和兩個檔案)*
-
-Step 2: 進入 \`src\` 資料夾
-\`\`\`bash
-user@server:~$ cd src
-\`\`\`
-
-Step 3: 查看 \`src\` 資料夾裡面的內容
-\`\`\`bash
-user@server:~/src$ ls
-main.py  preprocess.py  utils.py
-\`\`\`
-
-Step 4: 查看自己當前所在的絕對路徑
-\`\`\`bash
-user@server:~/src$ pwd
-/home/user/my_project/src
-\`\`\`
-
-Step 5: 辦完事，退回上一層目錄
-\`\`\`bash
-user@server:~/src$ cd ..
-user@server:~$ 
-\`\`\`
-*(成功回到了專案根目錄！)*`;
-    typeWriter(ch1, logBlock);
+5. **cd ~** : 直接回到當前使用者的「家目錄」（Home Directory）。`;
+    
+    typeWriter(ch1, logBlock, () => {
+      isTutorDecisionMode = true;
+      selectedDecisionIndex = 0;
+      activeDecisionEl = document.createElement('div');
+      activeDecisionEl.className = 'tutor-decision-block';
+      logBlock.appendChild(activeDecisionEl);
+      renderDecisionMenu();
+    });
   } else if (unit === '2') {
     const ch2 = `【[2] tmux 終端多工器教學】
 在伺服器跑深度學習實驗或長時間任務時，一旦斷網或關閉終端機，跑一半的程式就會中斷。**tmux 可以讓程式在背景（離線）持續運行。**
