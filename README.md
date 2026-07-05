@@ -70,7 +70,7 @@ github_page/
 | :--- | :--- |
 | `help` | 顯示系統支援的指令列表 |
 | `ls` 或 `list` | 列出目前庫存中所有的問答題目與 ID |
-| `cat <id>` | 直接閱讀特定 ID 的問答內容 (例如: `cat environment_setup`) |
+| `cat <id/編號>` | 直接閱讀特定 ID 或編號的問答內容 (例如: `cat environment_setup` 或 `cat 2`) |
 | `theme` | 顯示可用色彩主題列表，或輸入 `theme [名稱/數字]` 切換主題 |
 | `crt` | 開啟或關閉 CRT 螢幕復古濾鏡 |
 | `clear` 或 `cls` | 清除終端機螢幕上的歷史對話 |

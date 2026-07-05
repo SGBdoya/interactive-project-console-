@@ -232,7 +232,7 @@ function processCommandOrQuery(query, logBlock) {
     const helpText = `【系統說明與可用指令】
 - help      : 顯示此說明文件。
 - ls 或 list: 列出所有可查詢的專案問答項目與 ID。
-- cat <id>  : 檢視指定問題 ID 的詳細解答。
+- cat <id/編號>: 檢視指定問題 ID 或編號的詳細解答。
 - theme     : 顯示可用色彩主題列表，或輸入 \`theme [名稱/數字]\` 切換主題。
 - crt       : 切換復古 CRT 螢幕濾鏡效果（開/關）。
 - clear     : 清除螢幕內容。
@@ -244,7 +244,7 @@ function processCommandOrQuery(query, logBlock) {
   }
 
   if (lowerQuery === 'ls' || lowerQuery === 'list') {
-    let listText = `【可用的專案問答主題列表】\n請輸入關鍵字，或者輸入 \`cat [問題ID]\` (例如: \`cat environment_setup\`) 查看詳細回覆：\n\n`;
+    let listText = `【可用的專案問答主題列表】\n請輸入關鍵字，或者輸入 \`cat [問題ID 或 編號]\` (例如: \`cat environment_setup\` 或 \`cat 2\`) 查看詳細回覆：\n\n`;
     faqData.forEach((item, index) => {
       listText += `[${index + 1}] ID: ${item.id.padEnd(22)} | ${item.question}\n`;
     });
@@ -254,11 +254,22 @@ function processCommandOrQuery(query, logBlock) {
 
   if (lowerQuery.startsWith('cat ')) {
     const targetId = lowerQuery.substring(4).trim();
-    const item = faqData.find(d => d.id.toLowerCase() === targetId);
+    
+    // Check if user input is a number index
+    const targetIndex = parseInt(targetId, 10);
+    let item = null;
+    
+    if (!isNaN(targetIndex) && targetIndex >= 1 && targetIndex <= faqData.length) {
+      item = faqData[targetIndex - 1];
+    } else {
+      // Otherwise, match by string ID (case-insensitive)
+      item = faqData.find(d => d.id.toLowerCase() === targetId);
+    }
+
     if (item) {
       typeWriter(item.answer, logBlock);
     } else {
-      typeWriter(`系統錯誤：找不到 ID 為 "${targetId}" 的問題。請輸入 \`ls\` 查看正確的 ID 列表。`, logBlock);
+      typeWriter(`系統錯誤：找不到 ID 或編號為 "${targetId}" 的問題。請輸入 \`ls\` 查看正確的列表與編號。`, logBlock);
     }
     return;
   }
