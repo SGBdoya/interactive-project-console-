@@ -462,8 +462,20 @@ body::before {
   white-space: pre;
   color: var(--text-primary);
   text-shadow: var(--accent-glow);
-  margin-bottom: 12px;
+  margin-bottom: 0px;
   overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.ascii-subtext {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  text-shadow: var(--accent-glow);
+  font-size: 0.95rem;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  padding-left: 2px;
 }
 
 .system-time {
@@ -721,6 +733,12 @@ pre code {
   
   .ascii-art {
     font-size: 5px;
+  }
+  
+  .ascii-subtext {
+    font-size: 0.78rem;
+    margin-top: 10px;
+    margin-bottom: 12px;
   }
   
   .terminal-body {
