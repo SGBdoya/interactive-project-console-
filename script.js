@@ -183,7 +183,7 @@ function handleKeyDown(e) {
       processTutorSimInput(simQuery);
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      handleTutorSimTabComplete();
+      handleTabComplete();
     }
     return;
   }
@@ -818,6 +818,64 @@ function getFallbackFaqData() {
   ];
 }
 
+// Get current active terminal mode
+function getCurrentTerminalMode() {
+  if (isTutorSimMode) return 'TUTORIAL_SIM';
+  if (isTutorialMode) return 'TUTORIAL_SELECT';
+  if (isFaqListMode) return 'FAQ_SELECT';
+  return 'STANDARD';
+}
+
+// Mode-specific autocomplete configurations
+const autocompleteModes = {
+  TUTORIAL_SIM: {
+    getCandidates() {
+      if (tutorSimStep === 1) return ['ls'];
+      if (tutorSimStep === 2) return ['cd src'];
+      if (tutorSimStep === 3) return ['ls'];
+      if (tutorSimStep === 4) return ['pwd'];
+      if (tutorSimStep === 5) return ['cd ..'];
+      return [];
+    }
+  },
+  TUTORIAL_SELECT: {
+    getCandidates() {
+      return ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod', 'exit', 'quit', 'clear', 'cls'];
+    }
+  },
+  FAQ_SELECT: {
+    getCandidates() {
+      const faqIds = faqData.map(d => d.id.toLowerCase());
+      const faqIndexes = Array.from({ length: faqData.length }, (_, i) => String(i + 1));
+      return [...faqIds, ...faqIndexes, 'exit', 'quit', 'clear', 'cls'];
+    }
+  },
+  STANDARD: {
+    getCandidates(input) {
+      const inputLower = input.toLowerCase();
+      if (inputLower.startsWith('cat ')) {
+        const term = input.substring(4);
+        return faqData.map(d => d.id).filter(id => id.toLowerCase().startsWith(term.toLowerCase())).map(id => 'cat ' + id);
+      }
+      if (inputLower.startsWith('theme ')) {
+        const term = input.substring(6);
+        const themes = ['matrix', 'amber', 'cyberpunk', 'dracula', 'solarized', 'light'];
+        return themes.filter(t => t.toLowerCase().startsWith(term.toLowerCase())).map(t => 'theme ' + t);
+      }
+      if (inputLower.startsWith('tutorial ')) {
+        const term = input.substring(9);
+        const tutors = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod'];
+        return tutors.filter(t => t.toLowerCase().startsWith(term.toLowerCase())).map(t => 'tutorial ' + t);
+      }
+      
+      const commands = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat', 'tutorial'];
+      const ids = faqData.map(d => d.id);
+      const keywords = [...new Set(faqData.flatMap(d => d.keywords))];
+      return [...commands, ...ids, ...keywords];
+    }
+  }
+};
+
 // Handle Tab Autocompletes
 function handleTabComplete() {
   const currentInput = terminalInput.value;
@@ -836,43 +894,19 @@ function handleTabComplete() {
   tabMatches = [];
   tabMatchIndex = 0;
 
-  const inputLower = currentInput.toLowerCase();
+  const inputLower = currentInput.toLowerCase().trim();
+  const currentMode = getCurrentTerminalMode();
+  const config = autocompleteModes[currentMode];
 
-  // 1. Context-aware completions based on modes
-  if (isTutorialMode) {
-    const tutorModeCandidates = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod', 'exit', 'quit', 'clear', 'cls'];
-    tabMatches = tutorModeCandidates.filter(c => c.startsWith(inputLower));
-  } else if (isFaqListMode) {
-    const faqIds = faqData.map(d => d.id.toLowerCase());
-    const faqIndexes = Array.from({ length: faqData.length }, (_, i) => String(i + 1));
-    const faqModeCandidates = [...faqIds, ...faqIndexes, 'exit', 'quit', 'clear', 'cls'];
-    tabMatches = faqModeCandidates.filter(c => c.startsWith(inputLower));
-  } else {
-    // 2. Standard Mode Autocompletions
-    if (inputLower.startsWith('cat ')) {
-      const term = currentInput.substring(4);
-      const idCandidates = faqData.map(d => d.id);
-      const matchedIds = idCandidates.filter(id => id.toLowerCase().startsWith(term.toLowerCase()));
-      tabMatches = matchedIds.map(id => 'cat ' + id);
-    } else if (inputLower.startsWith('theme ')) {
-      const term = currentInput.substring(6);
-      const themeCandidates = ['matrix', 'amber', 'cyberpunk', 'dracula', 'solarized', 'light'];
-      const matchedThemes = themeCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
-      tabMatches = matchedThemes.map(t => 'theme ' + t);
-    } else if (inputLower.startsWith('tutorial ')) {
-      const term = currentInput.substring(9);
-      const tutorCandidates = ['1', '2', '3', '4', 'linux', 'tmux', 'conda', 'chmod'];
-      const matchedTutors = tutorCandidates.filter(t => t.toLowerCase().startsWith(term.toLowerCase()));
-      tabMatches = matchedTutors.map(t => 'tutorial ' + t);
+  if (config) {
+    const candidates = typeof config.getCandidates === 'function' 
+      ? config.getCandidates(currentInput) 
+      : (config.candidates || []);
+      
+    if (currentMode === 'STANDARD' && (inputLower.startsWith('cat ') || inputLower.startsWith('theme ') || inputLower.startsWith('tutorial '))) {
+      tabMatches = candidates;
     } else {
-      // Normal command list or general question keyword completions
-      const commandCandidates = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat', 'tutorial'];
-      const idCandidates = faqData.map(d => d.id);
-      const keywordCandidates = [...new Set(faqData.flatMap(d => d.keywords))];
-
-      const allCandidates = [...commandCandidates, ...idCandidates, ...keywordCandidates];
-      // Filter matching completions by prefix (case-insensitive)
-      tabMatches = allCandidates.filter(c => c.toLowerCase().startsWith(inputLower));
+      tabMatches = candidates.filter(c => c.toLowerCase().startsWith(inputLower));
     }
   }
 
@@ -1157,25 +1191,4 @@ function processTutorSimInput(simQuery) {
   }
 }
 
-// Linux Simulated Console Tab Autocompletions
-function handleTutorSimTabComplete() {
-  const currentInput = terminalInput.value;
-  let targetCommand = '';
 
-  if (tutorSimStep === 1) {
-    targetCommand = 'ls';
-  } else if (tutorSimStep === 2) {
-    targetCommand = 'cd src';
-  } else if (tutorSimStep === 3) {
-    targetCommand = 'ls';
-  } else if (tutorSimStep === 4) {
-    targetCommand = 'pwd';
-  } else if (tutorSimStep === 5) {
-    targetCommand = 'cd ..';
-  }
-
-  if (targetCommand && targetCommand.startsWith(currentInput.toLowerCase().trim())) {
-    terminalInput.value = targetCommand;
-    updateCursorPosition();
-  }
-}
