@@ -1,0 +1,32 @@
+# OS metadata files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Python cache (in case they use python -m http.server)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node / JS dependencies (in case they install npm packages later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs
+*.log

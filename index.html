@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學長專案諮詢終端 | Grad Project Q&A Terminal</title>
+  <meta name="description" content="互動式終端風格的專案諮詢機器人，提供碩士畢業專案的問答、安裝與執行指南。">
+  
+  <!-- Google Fonts for Terminal look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- CRT scanline overlays for retro aesthetic -->
+  <div class="crt-overlay"></div>
+  <div class="scanlines"></div>
+
+  <div class="app-container">
+    <!-- Header/Nav Bar (Not too intrusive, fits the theme) -->
+    <header class="main-header">
+      <div class="logo">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Graduation Project Portal</span>
+      </div>
+      <div class="quick-links">
+        <a href="https://github.com" target="_blank" id="github-link"><i class="fa-brands fa-github"></i> GitHub</a>
+      </div>
+    </header>
+
+    <!-- Main Terminal Window -->
+    <main class="terminal-window" id="terminal-window">
+      <!-- Window Title Bar -->
+      <div class="title-bar">
+        <div class="window-buttons">
+          <span class="btn close"></span>
+          <span class="btn minimize"></span>
+          <span class="btn maximize"></span>
+        </div>
+        <div class="window-title">visitor@grad-project-terminal:~</div>
+        <div class="terminal-actions">
+          <button id="theme-toggle" title="切換配色主題" class="action-btn">
+            <i class="fa-solid fa-palette"></i>
+          </button>
+          <button id="crt-toggle" title="切換 CRT 濾鏡效果" class="action-btn active">
+            <i class="fa-solid fa-tv"></i>
+          </button>
+          <button id="clear-btn" title="清除畫面 (clear)" class="action-btn">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Terminal Body -->
+      <div class="terminal-body" id="terminal-body">
+        <!-- Welcome Message -->
+        <div class="terminal-output welcome-message">
+          <pre class="ascii-art">
+  ____                 _   ____            _           _   
+ / ___|_ __ __ _  __| | |  _ \ _ __ ___ (_) ___  ___| |_ 
+| |  _| '__/ _` |/ _` | | |_) | '__/ _ \| |/ _ \/ __| __|
+| |_| | | | (_| | (_| | |  __/| | | (_) | |  __/ (__| |_ 
+ \____|_|  \__,_|\__,_| |_|   |_|  \___// |\___|\___|\__|
+                                      |__/               
+          </pre>
+          <p class="system-time">系統載入成功... 當前時間: <span id="current-time">YYYY-MM-DD HH:MM:SS</span></p>
+          <p class="system-status"><span class="status-badge">ONLINE</span> 碩士畢業專案互動式問答系統 v1.0.0 已啟動。</p>
+          <p class="help-hint">※ 輸入 <span class="highlight">help</span> 或 <span class="highlight">ls</span> 查看可用指令，或者直接在下方輸入您的問題或關鍵字。</p>
+          <div class="divider"></div>
+        </div>
+
+        <!-- Dynamic Output Container -->
+        <div id="output-history"></div>
+
+        <!-- Terminal Input Line -->
+        <div class="input-line">
+          <span class="prompt">visitor@grad-project-terminal:~$</span>
+          <div class="input-container">
+            <input type="text" id="terminal-input" autocomplete="off" autofocus placeholder="輸入指令或問題... (例如: 怎麼執行、環境安裝)">
+            <span class="cursor"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Suggestion Chips Footer -->
+      <div class="suggestion-section">
+        <span class="suggestion-label"><i class="fa-regular fa-lightbulb"></i> 快速提問：</span>
+        <div class="chips-container" id="chips-container">
+          <!-- Will be loaded dynamically -->
+        </div>
+      </div>
+
+      <!-- Terminal Status Bar -->
+      <footer class="terminal-status-bar">
+        <div class="status-left">
+          <span><i class="fa-solid fa-code-branch"></i> main</span>
+          <span class="separator">|</span>
+          <span>UTF-8</span>
+        </div>
+        <div class="status-right">
+          <span>Database: Local JSON (Keyword Matching)</span>
+          <span class="separator">|</span>
+          <span id="match-accuracy">Accuracy: High</span>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

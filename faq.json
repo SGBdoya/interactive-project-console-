@@ -1,0 +1,38 @@
+[
+  {
+    "id": "project_overview",
+    "question": "這個專案主要在做什麼？（專案簡介）",
+    "keywords": ["介紹", "做什麼", "簡介", "overview", "what", "project", "功能"],
+    "answer": "【專案簡介】\n本研究所專案主要基於深度學習/系統架構設計，旨在解決...的問題。\n核心模組包含：\n1. 資料預處理與特徵提取\n2. 模型訓練與評估\n3. 即時推論與網頁視覺化介面\n\n您可以輸入 `ls` 查看更多主題，或直接輸入關鍵字（例如：'環境'、'執行'）來提問。"
+  },
+  {
+    "id": "environment_setup",
+    "question": "如何安裝與設定開發環境？",
+    "keywords": ["環境", "安裝", "架設", "安裝步驟", "setup", "install", "requirements", "python", "cuda"],
+    "answer": "【環境安裝說明】\n1. 確保您的系統已安裝 Python 3.9+ 與 CUDA 11.8 (若需要 GPU 加速)。\n2. 複製專案：\n   `git clone <your-repo-url>`\n   `cd <your-repo-folder>`\n3. 安裝依賴套件：\n   `pip install -r requirements.txt`\n4. 設定環境變數：將 `.env.example` 複製為 `.env` 並修改其中的設定值。"
+  },
+  {
+    "id": "how_to_run",
+    "question": "如何執行/啟動這個專案？",
+    "keywords": ["執行", "啟動", "運行", "run", "start", "execute", "how to run"],
+    "answer": "【專案執行步驟】\n1. 啟動後端 API 伺服器：\n   `python manage.py runserver` 或 `uvicorn main:app --reload`\n2. 啟動前端介面（若有）：\n   `cd frontend && npm run dev`\n3. 執行測試腳本確認功能正常：\n   `pytest tests/`"
+  },
+  {
+    "id": "system_architecture",
+    "question": "專案的架構與檔案目錄結構為何？",
+    "keywords": ["架構", "結構", "目錄", "檔案", "資料夾", "architecture", "folder", "structure"],
+    "answer": "【系統架構與檔案目錄】\n```\n├── data/               # 原始與處理後的資料集\n├── models/             # 模型定義與預訓練權重\n├── src/                # 專案核心原始碼\n│   ├── preprocess.py   # 資料預處理\n│   ├── train.py        # 訓練邏輯\n│   └── utils.py        # 輔助函式\n├── tests/              # 單元測試\n├── requirements.txt    # Python 套件依賴\n└── README.md           # 專案說明文件\n```"
+  },
+  {
+    "id": "troubleshooting",
+    "question": "常見的錯誤與解決方法（Troubleshooting）？",
+    "keywords": ["錯誤", "故障", "bug", "error", "fail", "解決", "無法執行", "卡住", "trouble"],
+    "answer": "【常見問題與排除方式】\n1. Q: 記憶體不足 (OOM, Out of Memory)\n   A: 請在 `config.json` 中調小 `batch_size`，或者減少輸入的影像解析度。\n2. Q: 找不到模組 (ModuleNotFoundError)\n   A: 請確認是否已啟動虛綠環境 (venv/conda) 且執行過 `pip install -r requirements.txt`。"
+  },
+  {
+    "id": "contact_author",
+    "question": "如何聯絡作者（學長）？",
+    "keywords": ["聯絡", "學長", "作者", "email", "mail", "contact", "author", "學長是誰"],
+    "answer": "【聯絡作者】\n- 作者：[您的姓名/學長姓名]\n- Email：[您的電子信箱 (例如: student@university.edu.tw)]\n- 實驗室：[實驗室名稱與房號]\n- 備註：如果有遇到代碼上的重大問題，歡迎寄信討論，並請附上完整的錯誤 Log 哦！"
+  }
+]
