@@ -60,33 +60,7 @@ github_page/
 
 ---
 
-## 💻 本地執行方式
 
-1. **直接開啟**：直接雙擊 [index.html](./index.html) 在瀏覽器中載入。
-   * *注意：部分瀏覽器可能因安全限制 (CORS policy) 阻擋本地直接載入 `faq.json`。若有此狀況，請使用第二種方法。*
-2. **使用 Local Server (推薦)**：
-   - 如果您使用 VS Code，可以安裝 **Live Server** 套件，並點擊右下角 "Go Live"。
-   - 或者，在終端機切換至本專案目錄下並執行：
-     ```bash
-     # 使用 Python 開啟簡易伺服器
-     python -m http.server 8000
-     ```
-     然後在瀏覽器打開：`http://localhost:8000`
-
----
-
-## 🚀 如何部署至 GitHub Pages
-
-由於本專案為純靜態網頁，您可以直接使用 GitHub Pages 免費代管：
-
-1. 在 GitHub 上創建一個新的 Repository (例如: `my-thesis-project`)。
-2. 將本專案的所有檔案 (`index.html`, `style.css`, `script.js`, `faq.json`) 上傳或 Push 到您的 Repository 的 `main` 分支。
-3. 進入 Repository 的 **Settings** (設定) -> **Pages**。
-4. 在 **Build and deployment** 下方的 **Source** 選擇 **Deploy from a branch**。
-5. 在 **Branch** 選擇 **`main`** 且目錄選擇 **`/ (root)`**，然後點擊 **Save** (儲存)。
-6. 約等候 1-2 分鐘後，即可在頁面上方看到您的網站連結（網址格式通常為 `https://<your-github-username>.github.io/<repo-name>/`）。
-
----
 
 ## ⌨️ 終端可用指令表
 
