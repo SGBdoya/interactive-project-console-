@@ -34,3 +34,7 @@ pnpm-debug.log*
 # Plaintext databases (should only exist locally, never pushed to Git)
 faq.json
 fun_faq.json
+
+# Dev-only tools — the deployed static site does not need these, keep them local only
+encrypt.js
+test_decrypt.js
