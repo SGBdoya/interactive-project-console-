@@ -1070,18 +1070,30 @@ function showTutorMenu() {
 function renderDecisionMenu() {
   if (!activeDecisionEl) return;
   
-  const optYes = selectedDecisionIndex === 0 ? '➔ **[是] 進入互動式 Linux 指令模擬器**' : '   [是] 進入互動式 Linux 指令模擬器';
-  const optNo  = selectedDecisionIndex === 1 ? '➔ **[否] 返回教學目錄**' : '   [否] 返回教學目錄';
-  
-  // Format with Markdown since typeWriter handles ** bold
-  const rawText = `
-是否要進入實戰演練？
-${optYes}
-${optNo}
+  let title = '是否要進入 Linux 指令實戰演練？';
+  if (tutorCurrentChapter === '2') {
+    title = '是否要進入 tmux 終端多工器實戰演練？';
+  } else if (tutorCurrentChapter === '3') {
+    title = '是否要進入 Conda 虛擬環境管理實戰演練？';
+  } else if (tutorCurrentChapter === '4') {
+    title = '是否要進入 chmod 檔案執行權限實戰演練？';
+  }
 
-（使用方向鍵 [↑ / ↓] 選擇，按 [Enter] 確認）`;
-  
-  activeDecisionEl.innerHTML = formatMarkdown(rawText);
+  const activeYes = selectedDecisionIndex === 0 ? 'active' : '';
+  const activeNo  = selectedDecisionIndex === 1 ? 'active' : '';
+
+  activeDecisionEl.innerHTML = `
+    <div class="decision-container">
+      <div class="decision-title">${escapeHTML(title)}</div>
+      <div class="decision-option ${activeYes}" onclick="selectedDecisionIndex=0; confirmDecision();">
+        [是] 進入互動式模擬器
+      </div>
+      <div class="decision-option ${activeNo}" onclick="selectedDecisionIndex=1; confirmDecision();">
+        [否] 返回教學目錄
+      </div>
+      <div class="decision-hint">（使用方向鍵 [↑ / ↓] 選擇，按 [Enter] 確認；或點擊選項）</div>
+    </div>
+  `;
   scrollToBottom();
 }
 
