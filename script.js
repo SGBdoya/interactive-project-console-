@@ -4,6 +4,7 @@
 
 // State variables
 let faqData = [];
+let funFaqData = [];
 let commandHistory = [];
 let historyIndex = -1;
 let isTypingActive = false;
@@ -63,18 +64,25 @@ window.addEventListener('DOMContentLoaded', async () => {
   updateTime();
   setInterval(updateTime, 1000);
 
-  // Load FAQ Database
+  // Load FAQ Databases
   try {
-    const response = await fetch('faq.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    faqData = await response.json();
+    const [resFaq, resFun] = await Promise.all([
+      fetch('faq.json'),
+      fetch('fun_faq.json')
+    ]);
+    if (resFaq.ok) faqData = await resFaq.json();
+    else faqData = getFallbackFaqData();
+
+    if (resFun.ok) funFaqData = await resFun.json();
+    else funFaqData = [];
+    
     console.log('FAQ data loaded:', faqData);
+    console.log('Fun FAQ data loaded:', funFaqData);
     generateSuggestionChips();
   } catch (error) {
-    console.error('Failed to load faq.json, using fallback data:', error);
+    console.error('Failed to load databases, using fallback:', error);
     faqData = getFallbackFaqData();
+    funFaqData = [];
     generateSuggestionChips();
   }
 
@@ -254,6 +262,42 @@ function handleKeyDown(e) {
   }
 }
 
+// Dynamic placeholder formatter for Easter Egg answers
+function formatAnswer(answer) {
+  if (!answer) return '';
+  
+  const restaurants = [
+    '學校學餐大盤雞 🍗',
+    '超商關東煮跟茶葉蛋 🥚',
+    '學區巷口古早味排骨飯 🍱',
+    '大庄大火鍋 🍲',
+    '學區老牌牛肉麵 🍜',
+    '麥當勞雙層牛肉吉事堡 🍔',
+    '香噴噴脆皮炸雞 🍗',
+    '轉角熱呼呼麻辣燙 🍢',
+    '溫馨日式拉麵 🍜',
+    '健康減脂水煮餐（學長督促你） 🥗'
+  ];
+  
+  const moods = [
+    '☀️ 陽光普照（教授心情極佳，提案或請假簽名趁現在！）',
+    '⛅ 晴時多雲（普通，Meeting 時正常報告即可）',
+    '🌧️ 陰雨綿綿（稍微低氣壓，進辦公室前深呼吸，講話客氣點）',
+    '⛈️ 狂風暴雨（老闆今天大雷雨，沒事千萬不要走進去辦公室！）'
+  ];
+  
+  let formatted = answer;
+  if (formatted.includes('{random_restaurant}')) {
+    const randomIdx = Math.floor(Math.random() * restaurants.length);
+    formatted = formatted.replace('{random_restaurant}', restaurants[randomIdx]);
+  }
+  if (formatted.includes('{random_mood}')) {
+    const randomIdx = Math.floor(Math.random() * moods.length);
+    formatted = formatted.replace('{random_mood}', moods[randomIdx]);
+  }
+  return formatted;
+}
+
 // Submit command or question query
 function submitQuery(query) {
   // Save in history
@@ -338,7 +382,7 @@ function processCommandOrQuery(query, logBlock) {
     }
     
     if (item) {
-      typeWriter(item.answer, logBlock);
+      typeWriter(formatAnswer(item.answer), logBlock);
       return;
     }
     
@@ -405,12 +449,13 @@ function processCommandOrQuery(query, logBlock) {
     if (!isNaN(targetIndex) && targetIndex >= 1 && targetIndex <= faqData.length) {
       item = faqData[targetIndex - 1];
     } else {
-      // Otherwise, match by string ID (case-insensitive)
-      item = faqData.find(d => d.id.toLowerCase() === targetId);
+      // Otherwise, match by string ID (case-insensitive) across both databases
+      const allData = [...faqData, ...funFaqData];
+      item = allData.find(d => d.id.toLowerCase() === targetId);
     }
 
     if (item) {
-      typeWriter(item.answer, logBlock);
+      typeWriter(formatAnswer(item.answer), logBlock);
     } else {
       typeWriter(`系統錯誤：找不到 ID 或編號為 "${targetId}" 的問題。請輸入 \`ls\` 查看正確的列表與編號。`, logBlock);
     }
@@ -478,7 +523,7 @@ function processCommandOrQuery(query, logBlock) {
   const matchResult = searchFaqData(query);
   
   if (matchResult.bestMatch) {
-    let responseText = matchResult.bestMatch.answer;
+    let responseText = formatAnswer(matchResult.bestMatch.answer);
     
     // If there were other close matches, suggest them at the end
     if (matchResult.alternatives.length > 0) {
@@ -525,7 +570,8 @@ function searchFaqData(query) {
   let scoringResults = [];
 
   // Match loop
-  faqData.forEach(item => {
+  const allData = [...faqData, ...funFaqData];
+  allData.forEach(item => {
     let score = 0;
     let localMatched = [];
 
@@ -873,9 +919,10 @@ const autocompleteModes = {
   STANDARD: {
     getCandidates(input) {
       const inputLower = input.toLowerCase();
+      const allData = [...faqData, ...funFaqData];
       if (inputLower.startsWith('cat ')) {
         const term = input.substring(4);
-        return faqData.map(d => d.id).filter(id => id.toLowerCase().startsWith(term.toLowerCase())).map(id => 'cat ' + id);
+        return allData.map(d => d.id).filter(id => id.toLowerCase().startsWith(term.toLowerCase())).map(id => 'cat ' + id);
       }
       if (inputLower.startsWith('theme ')) {
         const term = input.substring(6);
@@ -889,8 +936,8 @@ const autocompleteModes = {
       }
       
       const commands = ['help', 'ls', 'list', 'clear', 'cls', 'about', 'theme', 'crt', 'cat', 'tutorial'];
-      const ids = faqData.map(d => d.id);
-      const keywords = [...new Set(faqData.flatMap(d => d.keywords))];
+      const ids = allData.map(d => d.id);
+      const keywords = [...new Set(allData.flatMap(d => d.keywords))];
       return [...commands, ...ids, ...keywords];
     }
   }
