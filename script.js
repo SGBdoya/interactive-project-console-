@@ -17,7 +17,10 @@ let tempThemeBeforeSelection = '';
 const themesList = [
   { id: 'matrix', name: 'Matrix 經典綠 (預設)' },
   { id: 'amber', name: 'Fallout 琥珀黃' },
-  { id: 'cyberpunk', name: 'Cyberpunk 霓虹' }
+  { id: 'cyberpunk', name: 'Cyberpunk 霓虹' },
+  { id: 'dracula', name: 'Dracula 魅影紫' },
+  { id: 'solarized', name: 'Solarized 深海藍' },
+  { id: 'light', name: 'Paper Light 復古白' }
 ];
 let activeThemeSelectorEl = null;
 
@@ -304,9 +307,13 @@ function processCommandOrQuery(query, logBlock) {
       startThemeSelection(logBlock);
     } else {
       let targetTheme = '';
-      if (arg === '1' || arg === 'matrix') targetTheme = 'matrix';
-      else if (arg === '2' || arg === 'amber') targetTheme = 'amber';
-      else if (arg === '3' || arg === 'cyberpunk') targetTheme = 'cyberpunk';
+      const idx = parseInt(arg, 10);
+      if (!isNaN(idx) && idx >= 1 && idx <= themesList.length) {
+        targetTheme = themesList[idx - 1].id;
+      } else {
+        const matched = themesList.find(t => t.id === arg.toLowerCase());
+        if (matched) targetTheme = matched.id;
+      }
 
       if (targetTheme) {
         setTheme(targetTheme);
@@ -530,31 +537,23 @@ function clearScreen() {
 // Set Palette CSS Theme
 function setTheme(themeName) {
   const body = document.body;
+  const exists = themesList.some(t => t.id === themeName);
+  if (!exists) return false;
+
   if (themeName === 'matrix') {
     body.removeAttribute('data-theme');
-    currentTheme = 'matrix';
-    return true;
-  } else if (themeName === 'amber') {
-    body.setAttribute('data-theme', 'amber');
-    currentTheme = 'amber';
-    return true;
-  } else if (themeName === 'cyberpunk') {
-    body.setAttribute('data-theme', 'cyberpunk');
-    currentTheme = 'cyberpunk';
-    return true;
+  } else {
+    body.setAttribute('data-theme', themeName);
   }
-  return false;
+  currentTheme = themeName;
+  return true;
 }
 
 // Toggle Palette CSS Themes sequentially (for click button)
 function toggleTheme() {
-  if (currentTheme === 'matrix') {
-    setTheme('amber');
-  } else if (currentTheme === 'amber') {
-    setTheme('cyberpunk');
-  } else {
-    setTheme('matrix');
-  }
+  const currentIndex = themesList.findIndex(t => t.id === currentTheme);
+  const nextIndex = (currentIndex + 1) % themesList.length;
+  setTheme(themesList[nextIndex].id);
 }
 
 // Toggle Retro CRT Filters

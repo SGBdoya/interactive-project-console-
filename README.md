@@ -9,7 +9,7 @@
 - **GitHub Pages 友善**：100% 靜態網頁，極適合直接託管於 GitHub Pages 上。
 - **豐富美學設計**：
   - 支援復古 **CRT 螢幕掃描線與字體微光 (Glow)** 效果（可手動切換開關）。
-  - 支援三種色彩主題切換：**Matrix 經典綠**、**Fallout 琥珀黃**、**賽博朋克霓虹**。
+  - 支援六種色彩主題切換：**Matrix 經典綠**、**Fallout 琥珀黃**、**賽博朋克霓虹**、**Dracula 魅影紫**、**Solarized 深海藍** 以及 **Paper Light 復古白**。
   - 動態打字機（Typewriter）輸出模擬與游標閃爍。
   - 支援電腦鍵盤 Command History (方向鍵 `↑` / `↓` 回溯輸入歷史)。
   - 支援 **Tab 鍵自動補全 (Autocomplete)** 功能，可補全系統指令、問題 ID 及中文關鍵字（重複按 Tab 鍵可循環切換候選詞）。
