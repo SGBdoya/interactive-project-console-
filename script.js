@@ -812,15 +812,51 @@ function matchTutorialUnit(query) {
 function showTutorialUnit(unit, logBlock) {
   if (unit === '1') {
     const ch1 = `【[1] 基礎 Linux 指令教學】
-在伺服器環境中，所有操作都是使用指令進行：
+在 Linux 系統中，所有檔案的操作與導覽都是透過指令完成。以下是五個最核心的基礎指令：
 
-1. **pwd** : 顯示您當前所在的完整路徑目錄 (Print Working Directory)。
-2. **ls** : 列出當前目錄底下的所有檔案與子資料夾。
-   * 推薦：\`ls -la\` 可以顯示所有隱藏檔案 (如 \`.env\` 或 \`.git\`)，並列出權限、大小與修改日期。
-3. **cd [路徑]** : 切換工作目錄 (Change Directory)。
-   * 例如 \`cd src/\` 會進入 src 目錄。
-4. **cd ..** : 回到上一層目錄。(**注意：cd 與兩點之間必須有一個空格！** 不是 \`cd..\`)
-5. **cd ~** : 直接回到使用者的家目錄 (Home Directory)。`;
+1. **pwd** (Print Working Directory) : 顯示目前所在的完整目錄路徑。
+2. **ls** (List) : 列出目前目錄底下的所有檔案與資料夾。
+   * 💡 *進階提示：使用 \`ls -la\` 可以列出詳細資料（包括權限、擁有者、修改日期）以及開頭為點的隱藏檔案（如 \`.env\` 或 \`.gitignore\`）。*
+3. **cd [路徑]** (Change Directory) : 切換當前的工作目錄。
+4. **cd ..** : 回到「上一層」目錄。(**注意：cd 與點點之間一定要有「空格」，寫成 \`cd..\` 在 Linux 會報錯！**)
+5. **cd ~** : 直接回到當前使用者的「家目錄」（Home Directory）。
+
+---
+
+🎬 **【學弟實戰演練：完整目錄操作示範】**
+
+假設伺服器上有個專案目錄，我們可以這樣操作：
+
+Step 1: 先查看當前目錄有哪些東西
+\`\`\`bash
+user@server:~$ ls
+data  models  src  README.md  run.sh
+\`\`\`
+*(看到了三個資料夾和兩個檔案)*
+
+Step 2: 進入 \`src\` 資料夾
+\`\`\`bash
+user@server:~$ cd src
+\`\`\`
+
+Step 3: 查看 \`src\` 資料夾裡面的內容
+\`\`\`bash
+user@server:~/src$ ls
+main.py  preprocess.py  utils.py
+\`\`\`
+
+Step 4: 查看自己當前所在的絕對路徑
+\`\`\`bash
+user@server:~/src$ pwd
+/home/user/my_project/src
+\`\`\`
+
+Step 5: 辦完事，退回上一層目錄
+\`\`\`bash
+user@server:~/src$ cd ..
+user@server:~$ 
+\`\`\`
+*(成功回到了專案根目錄！)*`;
     typeWriter(ch1, logBlock);
   } else if (unit === '2') {
     const ch2 = `【[2] tmux 終端多工器教學】
