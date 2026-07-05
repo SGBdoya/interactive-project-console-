@@ -27,6 +27,9 @@ let activeThemeSelectorEl = null;
 // Tutorial Mode State
 let isTutorialMode = false;
 
+// FAQ List Mode State
+let isFaqListMode = false;
+
 // Interactive Tutorial Simulation Mode States
 let isTutorDecisionMode = false;
 let selectedDecisionIndex = 0;
@@ -304,6 +307,44 @@ function processCommandOrQuery(query, logBlock) {
     terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
   }
 
+  // 2. FAQ List Mode Intercept
+  if (isFaqListMode) {
+    if (lowerQuery === 'exit' || lowerQuery === 'quit' || lowerQuery === 'q') {
+      isFaqListMode = false;
+      terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+      typeWriter('已關閉問答主題清單模式。', logBlock);
+      return;
+    }
+    
+    // Check if input matches a Q&A index or ID
+    const cleanQuery = lowerQuery.replace(/[\[\]]/g, '').trim();
+    const targetIndex = parseInt(cleanQuery, 10);
+    let item = null;
+    
+    if (!isNaN(targetIndex) && targetIndex >= 1 && targetIndex <= faqData.length) {
+      item = faqData[targetIndex - 1];
+    } else {
+      item = faqData.find(d => d.id.toLowerCase() === cleanQuery);
+    }
+    
+    if (item) {
+      typeWriter(item.answer, logBlock);
+      return;
+    }
+    
+    // If they want to clear screen, let it happen but exit FAQ mode
+    if (lowerQuery === 'clear' || lowerQuery === 'cls') {
+      isFaqListMode = false;
+      terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+      clearScreen();
+      return;
+    }
+    
+    // Fall-through: if it's a non-FAQ command, exit list mode and continue processing
+    isFaqListMode = false;
+    terminalInput.placeholder = '輸入指令或問題... (例如: 怎麼執行、環境安裝)';
+  }
+
   // 2. Check System Commands
   if (lowerQuery === 'clear' || lowerQuery === 'cls') {
     clearScreen();
@@ -314,7 +355,7 @@ function processCommandOrQuery(query, logBlock) {
   if (lowerQuery === 'help') {
     const helpText = `【系統說明與可用指令】
 - help      : 顯示此說明文件。
-- ls 或 list: 列出所有可查詢的專案問答項目與 ID。
+- ls 或 list: 列出可查詢的專案問答清單（進入直接編號點閱模式）。
 - cat <id/編號>: 檢視指定問題 ID 或編號的詳細解答。
 - theme     : 顯示可用色彩主題列表，或輸入 \`theme [名稱/數字]\` 切換主題。
 - crt       : 切換復古 CRT 螢幕濾鏡效果（開/關）。
@@ -328,10 +369,18 @@ function processCommandOrQuery(query, logBlock) {
   }
 
   if (lowerQuery === 'ls' || lowerQuery === 'list') {
-    let listText = `【可用的專案問答主題列表】\n請輸入關鍵字，或者輸入 \`cat [問題ID 或 編號]\` (例如: \`cat environment_setup\` 或 \`cat 2\`) 查看詳細回覆：\n\n`;
+    isFaqListMode = true;
+    terminalInput.placeholder = '輸入問答編號 (如 1、2) 閱讀內容，或輸入 exit 退出清單模式...';
+    
+    let listText = `【可用的專案問答主題列表】
+請直接輸入 **[主題編號 或 ID]** 閱讀詳細解答，或輸入 **exit** 退出：
+
+`;
     faqData.forEach((item, index) => {
-      listText += `[${index + 1}] ID: ${item.id.padEnd(22)} | ${item.question}\n`;
+      listText += `  [${index + 1}] ID: ${item.id.padEnd(22)} | ${item.question}\n`;
     });
+    
+    listText += `\n💡 提示：現在您可以直接輸入數字（例如 \`1\`）或 ID 來閱讀該問答，輸入 \`exit\` 可隨時退出。`;
     typeWriter(listText, logBlock);
     return;
   }
