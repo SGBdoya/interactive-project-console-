@@ -76,4 +76,5 @@ github_page/
 | `theme` | 顯示可用色彩主題列表，或輸入 `theme [名稱/數字]` 切換主題 |
 | `crt` | 開啟或關閉 CRT 螢幕復古濾鏡 |
 | `clear` 或 `cls` | 清除終端機螢幕上的歷史對話 |
+| `tutorial` | 顯示 Linux/tmux/Conda 常用指令快速教學手冊 |
 | `about` | 顯示本研究專案的作者資訊與系統背景 |
