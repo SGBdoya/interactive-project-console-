@@ -1714,7 +1714,7 @@ async function unlockSystem(password) {
       outputHistory.appendChild(readyBlock);
       
       const readyText = `系統載入成功... 當前時間: ${new Date().toISOString().replace('T', ' ').substring(0, 19)}
-ONLINE Digital Twin Sim2Real Project 互動式問答系統 v1.3.0 已啟動。
+ONLINE Digital Twin Sim2Real Project 互動式問答系統 v1.3.1 已啟動。
 ※ 輸入 help 或 ls 查看可用指令，或者直接在下方輸入您的問題或關鍵字。`;
       typeWriter(readyText, readyBlock, () => {
         generateSuggestionChips();
