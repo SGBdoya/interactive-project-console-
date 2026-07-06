@@ -1677,8 +1677,8 @@ async function unlockSystem(password) {
 
   try {
     const [resFaq, resFun] = await Promise.all([
-      fetch('faq.enc'),
-      fetch('fun_faq.enc')
+      fetch(`faq.enc?_=${Date.now()}`),
+      fetch(`fun_faq.enc?_=${Date.now()}`)
     ]);
 
     if (!resFaq.ok || !resFun.ok) {
