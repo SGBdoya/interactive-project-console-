@@ -40,3 +40,4 @@ encrypt.js
 test_decrypt.js
 encode.js
 decode.js
+# Local crypto tools (dev-only, never push)
