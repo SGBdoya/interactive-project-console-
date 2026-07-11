@@ -33,6 +33,7 @@ let isTutorialMode = false;
 
 // FAQ List Mode State
 let isFaqListMode = false;
+let currentFaqListPage = 1;
 
 // Interactive Tutorial Simulation Mode States
 let isTutorDecisionMode = false;
@@ -367,6 +368,46 @@ function processCommandOrQuery(query, logBlock) {
       return;
     }
     
+    // Page turning commands inside FAQ mode
+    if (lowerQuery === 'n' || lowerQuery === 'next') {
+      const totalPages = Math.ceil(faqData.length / 10);
+      if (currentFaqListPage < totalPages) {
+        showFaqListPage(currentFaqListPage + 1, logBlock);
+      } else {
+        typeWriter('已經是最後一頁了。', logBlock);
+      }
+      return;
+    }
+    if (lowerQuery === 'p' || lowerQuery === 'prev') {
+      if (currentFaqListPage > 1) {
+        showFaqListPage(currentFaqListPage - 1, logBlock);
+      } else {
+        typeWriter('已經是第一頁了。', logBlock);
+      }
+      return;
+    }
+    
+    if (lowerQuery.startsWith('page ')) {
+      const pageNum = parseInt(lowerQuery.substring(5).trim(), 10);
+      if (!isNaN(pageNum) && pageNum >= 1) {
+        showFaqListPage(pageNum, logBlock);
+        return;
+      }
+    }
+    
+    if (lowerQuery === 'ls' || lowerQuery.startsWith('ls ') || lowerQuery === 'list' || lowerQuery.startsWith('list ')) {
+      let targetPage = 1;
+      const parts = lowerQuery.split(' ');
+      if (parts.length > 1) {
+        const pageNum = parseInt(parts[1], 10);
+        if (!isNaN(pageNum) && pageNum >= 1) {
+          targetPage = pageNum;
+        }
+      }
+      showFaqListPage(targetPage, logBlock);
+      return;
+    }
+
     // Check if input matches a Q&A index or ID
     const cleanQuery = lowerQuery.replace(/[\[\]]/g, '').trim();
     const targetIndex = parseInt(cleanQuery, 10);
@@ -406,7 +447,7 @@ function processCommandOrQuery(query, logBlock) {
   if (lowerQuery === 'help') {
     const helpText = `【系統說明與可用指令】
 - help      : 顯示此說明文件。
-- ls 或 list: 列出可查詢的專案問答清單（進入直接編號點閱模式）。
+- ls 或 list: 列出可查詢的專案問答清單（支援分頁，例如: \`ls 2\`）。
 - cat <id/編號>: 檢視指定問題 ID 或編號的詳細解答。
 - theme     : 顯示可用色彩主題列表，或輸入 \`theme [名稱/數字]\` 切換主題。
 - crt       : 切換復古 CRT 螢幕濾鏡效果（開/關）。
@@ -419,20 +460,17 @@ function processCommandOrQuery(query, logBlock) {
     return;
   }
 
-  if (lowerQuery === 'ls' || lowerQuery === 'list') {
-    isFaqListMode = true;
-    terminalInput.placeholder = '輸入問答編號 (如 1、2) 閱讀內容，或輸入 exit 退出清單模式...';
-    
-    let listText = `【可用的專案問答主題列表】
-請直接輸入 **[主題編號 或 ID]** 閱讀詳細解答，或輸入 **exit** 退出：
-
-`;
-    faqData.forEach((item, index) => {
-      listText += `  [${index + 1}] ID: ${item.id.padEnd(22)} | ${item.question}\n`;
-    });
-    
-    listText += `\n💡 提示：現在您可以直接輸入數字（例如 \`1\`）或 ID 來閱讀該問答，輸入 \`exit\` 可隨時退出。`;
-    typeWriter(listText, logBlock);
+  const isLsCmd = lowerQuery === 'ls' || lowerQuery.startsWith('ls ') || lowerQuery === 'list' || lowerQuery.startsWith('list ');
+  if (isLsCmd) {
+    let targetPage = 1;
+    const parts = lowerQuery.split(' ');
+    if (parts.length > 1) {
+      const pageNum = parseInt(parts[1], 10);
+      if (!isNaN(pageNum) && pageNum >= 1) {
+        targetPage = pageNum;
+      }
+    }
+    showFaqListPage(targetPage, logBlock);
     return;
   }
 
@@ -555,6 +593,37 @@ faqData.slice(0, 3).map(item => `• [${item.id}] ${item.question}`).join('\n');
     
     typeWriter(fallbackText, logBlock);
   }
+}
+
+// Render paginated FAQ list
+function showFaqListPage(page, logBlock) {
+  isFaqListMode = true;
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(faqData.length / itemsPerPage);
+  
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  currentFaqListPage = page;
+  
+  terminalInput.placeholder = `[頁次 ${page}/${totalPages}] 輸入編號/ID，n 下一頁，p 上一頁，exit 退出...`;
+  
+  let listText = `【可用的專案問答主題列表 (第 ${page}/${totalPages} 頁)】
+請直接輸入 **[主題編號 或 ID]** 閱讀詳細解答。
+輸入 **n** 或 **next** 可看下一頁，**p** 或 **prev** 看上一頁。
+輸入 **exit** 可隨時退出：
+
+`;
+  
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, faqData.length);
+  
+  for (let i = startIndex; i < endIndex; i++) {
+    const item = faqData[i];
+    listText += `  [${i + 1}] ID: ${item.id.padEnd(22)} | ${item.question}\n`;
+  }
+  
+  listText += `\n💡 提示：現在您可以直接輸入數字（例如 \`1\`）或 ID 來閱讀該問答，輸入 \`n\` / \`p\` 切換分頁。`;
+  typeWriter(listText, logBlock);
 }
 
 // Keyword Matcher algorithm
@@ -910,7 +979,7 @@ const autocompleteModes = {
     getCandidates() {
       const faqIds = faqData.map(d => d.id.toLowerCase());
       const faqIndexes = Array.from({ length: faqData.length }, (_, i) => String(i + 1));
-      return [...faqIds, ...faqIndexes, 'exit', 'quit', 'clear', 'cls'];
+      return [...faqIds, ...faqIndexes, 'next', 'prev', 'exit', 'quit', 'clear', 'cls'];
     }
   },
   STANDARD: {
